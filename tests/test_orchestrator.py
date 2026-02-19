@@ -7,7 +7,9 @@ from pathlib import Path
 from uuid import uuid4
 
 import yaml
+import structlog
 
+from fk_quant_research_accel.logging import configure_logging
 from fk_quant_research_accel.orchestrator import BatchConfig, Scenario, run_batch
 
 
@@ -63,6 +65,11 @@ class MockFKPinnClient:
         if self.checkpoint_mode == "inline":
             item["checkpoint"] = base64.b64encode(b"checkpoint-bytes").decode("utf-8")
         return {"item": item}
+
+
+def setup_function() -> None:
+    structlog.reset_defaults()
+    configure_logging("INFO")
 
 
 def _scenarios(count: int = 2) -> list[Scenario]:
