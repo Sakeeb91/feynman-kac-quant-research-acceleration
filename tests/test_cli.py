@@ -33,3 +33,15 @@ def test_run_batch_help_includes_expected_flags() -> None:
         "--output",
     ]:
         assert flag in result.stdout
+
+
+def test_log_level_debug_is_accepted() -> None:
+    result = runner.invoke(app, ["--log-level", "DEBUG", "--help"])
+    assert result.exit_code == 0
+    assert "--log-level" in result.stdout
+
+
+def test_invalid_log_level_is_rejected() -> None:
+    result = runner.invoke(app, ["--log-level", "INVALID", "--help"])
+    assert result.exit_code != 0
+    assert "Invalid value for '--log-level'" in result.stdout
