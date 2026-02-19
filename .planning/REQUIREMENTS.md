@@ -16,6 +16,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **IDENT-05**: Researcher can list past runs with summary metrics via CLI (`list-runs`)
 - [ ] **IDENT-06**: Researcher can compare two runs side-by-side aligned by scenario parameters via CLI (`compare-runs`)
 - [ ] **IDENT-07**: Researcher can view detailed results for any past run via CLI (`show-run`)
+- [ ] **IDENT-08**: Training checkpoints are durably persisted per scenario run (fetched from FK backend and stored in artifact directory), enabling downstream model packaging
 
 ### Configuration & Manifests
 
@@ -33,7 +34,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **EXEC-01**: Batch simulations execute concurrently with configurable concurrency limit (e.g., 10-20 simultaneous polls)
 - [ ] **EXEC-02**: Each completed scenario result is written to disk immediately (incremental writes, not batch-at-end)
 - [ ] **EXEC-03**: If the process crashes mid-batch, completed results are preserved on disk
-- [ ] **EXEC-04**: Researcher can resume an interrupted batch via CLI (`resume-batch`); resume is idempotent — completed scenarios are never rerun unless `--force` is specified
+- [ ] **EXEC-04**: Researcher can resume an interrupted batch via CLI (`resume-batch`); resume is idempotent -- completed scenarios are never rerun unless `--force` is specified
 - [ ] **EXEC-05**: Failed individual simulations are recorded with error details, not silently dropped
 - [ ] **EXEC-06**: Batch execution survives transient backend errors with configurable retry logic (backoff, max retries)
 - [ ] **EXEC-07**: A 50-200 scenario batch can run unattended and complete without manual intervention (SLO: >=95% scenario success rate, max 3 retries per scenario, wall time <= 2x theoretical sequential time / concurrency limit)
@@ -104,52 +105,53 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| IDENT-01 | TBD | Pending |
-| IDENT-02 | TBD | Pending |
-| IDENT-03 | TBD | Pending |
-| IDENT-04 | TBD | Pending |
-| IDENT-05 | TBD | Pending |
-| IDENT-06 | TBD | Pending |
-| IDENT-07 | TBD | Pending |
-| CONF-01 | TBD | Pending |
-| CONF-02 | TBD | Pending |
-| CONF-03 | TBD | Pending |
-| CONF-04 | TBD | Pending |
-| CONF-05 | TBD | Pending |
-| CONF-06 | TBD | Pending |
-| CONF-07 | TBD | Pending |
-| CONF-08 | TBD | Pending |
-| EXEC-01 | TBD | Pending |
-| EXEC-02 | TBD | Pending |
-| EXEC-03 | TBD | Pending |
-| EXEC-04 | TBD | Pending |
-| EXEC-05 | TBD | Pending |
-| EXEC-06 | TBD | Pending |
-| EXEC-07 | TBD | Pending |
-| RSLT-01 | TBD | Pending |
-| RSLT-02 | TBD | Pending |
-| RSLT-03 | TBD | Pending |
-| RSLT-04 | TBD | Pending |
-| RSLT-05 | TBD | Pending |
-| RSLT-06 | TBD | Pending |
-| RSLT-07 | TBD | Pending |
-| RSLT-08 | TBD | Pending |
-| RSLT-09 | TBD | Pending |
-| PKG-01 | TBD | Pending |
-| PKG-02 | TBD | Pending |
-| PKG-03 | TBD | Pending |
-| PKG-04 | TBD | Pending |
-| PKG-05 | TBD | Pending |
-| EXT-01 | TBD | Pending |
-| EXT-02 | TBD | Pending |
-| EXT-03 | TBD | Pending |
-| EXT-04 | TBD | Pending |
+| IDENT-01 | Phase 1 | Pending |
+| IDENT-02 | Phase 1 | Pending |
+| IDENT-03 | Phase 1 | Pending |
+| IDENT-04 | Phase 1 | Pending |
+| IDENT-05 | Phase 5 | Pending |
+| IDENT-06 | Phase 5 | Pending |
+| IDENT-07 | Phase 5 | Pending |
+| IDENT-08 | Phase 1 | Pending |
+| CONF-01 | Phase 2 | Pending |
+| CONF-02 | Phase 2 | Pending |
+| CONF-03 | Phase 2 | Pending |
+| CONF-04 | Phase 1 | Pending |
+| CONF-05 | Phase 2 | Pending |
+| CONF-06 | Phase 2 | Pending |
+| CONF-07 | Phase 2 | Pending |
+| CONF-08 | Phase 1 | Pending |
+| EXEC-01 | Phase 3 | Pending |
+| EXEC-02 | Phase 1 | Pending |
+| EXEC-03 | Phase 1 | Pending |
+| EXEC-04 | Phase 3 | Pending |
+| EXEC-05 | Phase 1 | Pending |
+| EXEC-06 | Phase 3 | Pending |
+| EXEC-07 | Phase 3 | Pending |
+| RSLT-01 | Phase 2 | Pending |
+| RSLT-02 | Phase 2 | Pending |
+| RSLT-03 | Phase 1 | Pending |
+| RSLT-04 | Phase 1 | Pending |
+| RSLT-05 | Phase 4 | Pending |
+| RSLT-06 | Phase 4 | Pending |
+| RSLT-07 | Phase 4 | Pending |
+| RSLT-08 | Phase 4 | Pending |
+| RSLT-09 | Phase 4 | Pending |
+| PKG-01 | Phase 7 | Pending |
+| PKG-02 | Phase 7 | Pending |
+| PKG-03 | Phase 7 | Pending |
+| PKG-04 | Phase 7 | Pending |
+| PKG-05 | Phase 7 | Pending |
+| EXT-01 | Phase 6 | Pending |
+| EXT-02 | Phase 6 | Pending |
+| EXT-03 | Phase 6 | Pending |
+| EXT-04 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 36 total
-- Mapped to phases: 0
-- Unmapped: 36
+- v1 requirements: 41 total
+- Mapped to phases: 41
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-19 after initial definition*
+*Last updated: 2026-02-19 after roadmap revision*
