@@ -4,6 +4,7 @@ import json
 from datetime import UTC, datetime
 
 from fk_quant_research_accel.models import generate_batch_run_id, generate_scenario_run_id
+from fk_quant_research_accel.store.artifacts import ArtifactStore
 from fk_quant_research_accel.store.metadata import MetadataStore
 from fk_quant_research_accel.store.migrations import init_db
 
@@ -150,3 +151,38 @@ def test_metadata_store_failed_result_increments_failed_count(tmp_path) -> None:
     assert scenario_rows[0]["error_message"] == "boom"
     assert batch_row is not None
     assert batch_row["failed_count"] == 1
+
+
+def test_artifact_store_creates_batch_and_scenario_dirs(tmp_path) -> None:
+    artifacts = ArtifactStore(tmp_path / "artifacts")
+    batch_run_id = str(generate_batch_run_id())
+    scenario_run_id = str(generate_scenario_run_id())
+
+    batch_dir = artifacts.create_batch_dir(batch_run_id)
+    scenario_dir = artifacts.create_scenario_dir(batch_run_id, scenario_run_id)
+
+    assert batch_dir.exists()
+    assert scenario_dir.exists()
+    assert artifacts.get_scenario_dir(batch_run_id, scenario_run_id) == scenario_dir
+
+
+def test_artifact_store_atomic_write_json_and_text_and_bytes(tmp_path) -> None:
+    artifacts = ArtifactStore(tmp_path / "artifacts")
+    batch_run_id = str(generate_batch_run_id())
+    scenario_run_id = str(generate_scenario_run_id())
+    scenario_dir = artifacts.create_scenario_dir(batch_run_id, scenario_run_id)
+
+    json_path = scenario_dir / "result.json"
+    text_path = scenario_dir / "notes.txt"
+    bytes_path = scenario_dir / "checkpoint.bin"
+
+    artifacts.atomic_write_json(json_path, {"score": 0.1, "status": "completed"})
+    artifacts.atomic_write_text(text_path, "hello")
+    artifacts.atomic_write_bytes(bytes_path, b"abc")
+
+    with json_path.open("r", encoding="utf-8") as handle:
+        parsed = json.load(handle)
+
+    assert parsed["status"] == "completed"
+    assert text_path.read_text(encoding="utf-8") == "hello"
+    assert bytes_path.read_bytes() == b"abc"
