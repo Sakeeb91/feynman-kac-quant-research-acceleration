@@ -42,6 +42,6 @@ def test_log_level_debug_is_accepted() -> None:
 
 
 def test_invalid_log_level_is_rejected() -> None:
-    result = runner.invoke(app, ["--log-level", "INVALID", "--help"])
+    result = runner.invoke(app, ["--log-level", "INVALID", "run-batch", "--help"])
     assert result.exit_code != 0
     assert "Invalid value for '--log-level'" in result.stdout
