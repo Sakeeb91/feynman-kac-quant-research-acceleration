@@ -98,22 +98,18 @@ def _build_failure_record(
     }
 
 
-def _atomic_write_bytes(path: Path, payload: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = path.with_suffix(f"{path.suffix}.tmp")
-    tmp_path.write_bytes(payload)
-    tmp_path.replace(path)
-
-
 def _fetch_checkpoint(
     client: FKPinnClient,
     simulation_id: str,
     scenario_dir: Path,
+    artifact_store: ArtifactStore | None = None,
 ) -> Path | None:
     log = structlog.get_logger().bind(simulation_id=simulation_id)
     checkpoint_dir = scenario_dir / "checkpoint"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     checkpoint_path = checkpoint_dir / "model_checkpoint.pt"
+    if artifact_store is None:
+        artifact_store = ArtifactStore(scenario_dir.parents[1])
 
     try:
         result_envelope = client.get_result(simulation_id)
@@ -124,11 +120,11 @@ def _fetch_checkpoint(
         if checkpoint_url:
             response = requests.get(str(checkpoint_url), timeout=30.0)
             response.raise_for_status()
-            _atomic_write_bytes(checkpoint_path, response.content)
+            artifact_store.atomic_write_bytes(checkpoint_path, response.content)
             return checkpoint_path
 
         if checkpoint_inline:
-            _atomic_write_bytes(checkpoint_path, base64.b64decode(checkpoint_inline))
+            artifact_store.atomic_write_bytes(checkpoint_path, base64.b64decode(checkpoint_inline))
             return checkpoint_path
 
         log.debug("checkpoint_not_available")
@@ -275,7 +271,12 @@ def run_batch(
                 )
                 artifact_store.atomic_write_json(scenario_dir / "result.json", record)
 
-                checkpoint_path = _fetch_checkpoint(client, simulation_id, scenario_dir)
+                checkpoint_path = _fetch_checkpoint(
+                    client,
+                    simulation_id,
+                    scenario_dir,
+                    artifact_store=artifact_store,
+                )
                 if checkpoint_path is not None:
                     record["checkpoint_path"] = str(checkpoint_path)
                     artifact_store.atomic_write_json(scenario_dir / "result.json", record)
