@@ -33,12 +33,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. All platform output uses structured logging with configurable `--log-level` (DEBUG/INFO/WARNING/ERROR), no print() statements remain
   5. Each run's full config (scenario grid, batch config, git SHA, seed, schema versions) is serialized as a manifest file alongside artifacts
   6. Training checkpoints fetched from the FK backend are durably stored in the scenario artifact directory, ready for downstream model packaging
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md -- Domain models (Pydantic v2) and storage layer (SQLite + filesystem artifacts)
+- [ ] 01-02-PLAN.md -- CLI migration to Typer and structured logging with structlog
+- [ ] 01-03-PLAN.md -- Orchestrator integration with incremental writes, manifest generation, and checkpoint fetch
 
 ### Phase 2: YAML Manifests, Validation, and Domain Models
 **Goal**: Researchers define experiments in version-controlled YAML files with validated schemas, and invalid parameter combinations are caught at pre-flight before any simulation is submitted
@@ -131,7 +131,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Durable Storage Foundation | 0/3 | Not started | - |
+| 1. Durable Storage Foundation | 0/3 | Planned | - |
 | 2. YAML Manifests, Validation, and Domain Models | 0/2 | Not started | - |
 | 3. Concurrent Durable Execution | 0/2 | Not started | - |
 | 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Not started | - |
@@ -141,4 +141,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 ---
 *Roadmap created: 2026-02-19*
-*Last updated: 2026-02-19*
+*Last updated: 2026-02-19 (Phase 1 planned)*
