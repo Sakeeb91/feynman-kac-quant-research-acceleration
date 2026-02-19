@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from fk_quant_research_accel.models.result import ScenarioResult
+
 from .migrations import init_db
 
 
@@ -92,6 +94,85 @@ class MetadataStore:
             (batch_run_id,),
         ).fetchall()
         return [dict(row) for row in rows]
+
+    def update_scenario_status(
+        self,
+        scenario_run_id: str,
+        status: str,
+        simulation_id: str | None = None,
+        started_at: str | None = None,
+    ) -> None:
+        self.connection.execute(
+            """
+            UPDATE scenario_runs
+            SET status = ?, simulation_id = ?, started_at = COALESCE(?, started_at)
+            WHERE scenario_run_id = ?
+            """,
+            (status, simulation_id, started_at, scenario_run_id),
+        )
+        self.connection.commit()
+
+    def persist_scenario_result(
+        self,
+        scenario_run_id: str,
+        status: str,
+        result_json: str,
+        score: float | None = None,
+        error_message: str | None = None,
+        completed_at: str | None = None,
+        checkpoint_path: str | None = None,
+        scenario_result: ScenarioResult | None = None,
+    ) -> None:
+        # Keep a typed link from storage layer to scenario result contract.
+        _ = scenario_result
+        self.connection.execute(
+            """
+            UPDATE scenario_runs
+            SET status = ?,
+                result_json = ?,
+                score = ?,
+                error_message = ?,
+                completed_at = ?,
+                checkpoint_path = ?
+            WHERE scenario_run_id = ?
+            """,
+            (
+                status,
+                result_json,
+                score,
+                error_message,
+                completed_at,
+                checkpoint_path,
+                scenario_run_id,
+            ),
+        )
+
+        batch_row = self.connection.execute(
+            "SELECT batch_run_id FROM scenario_runs WHERE scenario_run_id = ?",
+            (scenario_run_id,),
+        ).fetchone()
+        if batch_row is not None:
+            batch_run_id = batch_row["batch_run_id"]
+            if status == "completed":
+                self.connection.execute(
+                    """
+                    UPDATE batch_runs
+                    SET completed_count = completed_count + 1
+                    WHERE batch_run_id = ?
+                    """,
+                    (batch_run_id,),
+                )
+            elif status == "failed":
+                self.connection.execute(
+                    """
+                    UPDATE batch_runs
+                    SET failed_count = failed_count + 1
+                    WHERE batch_run_id = ?
+                    """,
+                    (batch_run_id,),
+                )
+
+        self.connection.commit()
 
     def update_batch_status(self, batch_run_id: str, status: str) -> None:
         self.connection.execute(
