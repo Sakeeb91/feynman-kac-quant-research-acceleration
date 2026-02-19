@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Iterable
 
+import structlog
 import typer
 
 from .client import FKPinnClient
@@ -24,15 +24,21 @@ def _parse_float_list(raw: str) -> list[float]:
     return [float(item.strip()) for item in raw.split(",") if item.strip()]
 
 
-def _print_top(rows: Iterable[dict], n: int = 10) -> None:
-    print("Top scenarios by score (lower is better):")
+def _log_top(rows: Iterable[dict], n: int = 10) -> None:
+    log = structlog.get_logger()
     for idx, row in enumerate(rows):
         if idx >= n:
             break
-        print(
-            f"{idx + 1:>2}. score={row['score']:.6f} "
-            f"dim={row['dim']} vol={row['volatility']} corr={row['correlation']} "
-            f"status={row['status']} train_loss={row['train_loss']}"
+        log.info(
+            "top_scenario",
+            rank=idx + 1,
+            score=row["score"],
+            dim=row["dim"],
+            volatility=row["volatility"],
+            correlation=row["correlation"],
+            option_type=row["option_type"],
+            status=row["status"],
+            train_loss=row["train_loss"],
         )
 
 
@@ -58,6 +64,7 @@ def run_batch_command(
     max_wait_seconds: float = typer.Option(1800.0, "--max-wait-seconds"),
     output: str = typer.Option("artifacts/batch_results.csv", "--output"),
 ) -> None:
+    log = structlog.get_logger()
     client = FKPinnClient(base_url=base_url)
     scenarios = generate_black_scholes_scenarios(
         dimensions=_parse_int_list(dimensions),
@@ -79,8 +86,8 @@ def run_batch_command(
         max_wait_seconds=max_wait_seconds,
     )
     output_path = write_csv(rows, output)
-    _print_top(rows)
-    print(f"Wrote {len(rows)} rows to {output_path}")
+    _log_top(rows)
+    log.info("batch_complete", rows=len(rows), output=str(output_path))
 
 
 def main() -> None:
