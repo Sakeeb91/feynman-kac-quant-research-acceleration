@@ -264,3 +264,20 @@ def test_run_batch_backward_compatible(monkeypatch, tmp_path) -> None:
 
     assert len(rows) == 1
     assert rows[0]["status"] == "completed"
+
+
+def test_run_batch_persists_checkpoint_when_available(tmp_path) -> None:
+    client = MockFKPinnClient(checkpoint_mode="inline")
+    artifacts_root = tmp_path / "artifacts"
+
+    rows = run_batch(
+        client=client,
+        scenarios=_scenarios(1),
+        batch_config=BatchConfig(),
+        artifacts_dir=artifacts_root,
+    )
+
+    assert rows[0]["checkpoint_path"] is not None
+    checkpoint_path = Path(rows[0]["checkpoint_path"])
+    assert checkpoint_path.exists()
+    assert checkpoint_path.read_bytes() == b"checkpoint-bytes"
