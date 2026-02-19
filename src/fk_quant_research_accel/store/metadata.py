@@ -125,6 +125,10 @@ class MetadataStore:
     ) -> None:
         # Keep a typed link from storage layer to scenario result contract.
         _ = scenario_result
+        current_row = self.connection.execute(
+            "SELECT batch_run_id, status FROM scenario_runs WHERE scenario_run_id = ?",
+            (scenario_run_id,),
+        ).fetchone()
         self.connection.execute(
             """
             UPDATE scenario_runs
@@ -147,13 +151,10 @@ class MetadataStore:
             ),
         )
 
-        batch_row = self.connection.execute(
-            "SELECT batch_run_id FROM scenario_runs WHERE scenario_run_id = ?",
-            (scenario_run_id,),
-        ).fetchone()
-        if batch_row is not None:
-            batch_run_id = batch_row["batch_run_id"]
-            if status == "completed":
+        if current_row is not None:
+            batch_run_id = current_row["batch_run_id"]
+            prior_status = current_row["status"]
+            if status == "completed" and prior_status != "completed":
                 self.connection.execute(
                     """
                     UPDATE batch_runs
@@ -162,7 +163,7 @@ class MetadataStore:
                     """,
                     (batch_run_id,),
                 )
-            elif status == "failed":
+            elif status == "failed" and prior_status != "failed":
                 self.connection.execute(
                     """
                     UPDATE batch_runs
