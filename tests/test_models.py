@@ -9,7 +9,10 @@ from fk_quant_research_accel.models import (
     ManifestMetadata,
     ReproducibilityInfo,
     RunManifest,
+    ScenarioResult,
     ScenarioStatus,
+    capture_environment,
+    capture_git_info,
     generate_batch_run_id,
     generate_scenario_run_id,
     write_manifest,
@@ -83,3 +86,48 @@ def test_write_manifest_produces_yaml(tmp_path) -> None:
 
     assert loaded["batch_run_id"] == manifest.batch_run_id
     assert loaded["schema_versions"]["manifest_schema_version"] == 1
+
+
+def test_scenario_result_supports_full_and_minimal_payloads() -> None:
+    full = ScenarioResult(
+        scenario_run_id=str(generate_scenario_run_id()),
+        batch_run_id=str(generate_batch_run_id()),
+        simulation_id="sim-1",
+        status=ScenarioStatus.COMPLETED,
+        scenario_params={"dim": 10},
+        train_loss=0.1,
+        val_loss=0.12,
+        grad_norm=0.3,
+        lr=1e-3,
+        progress=1.0,
+        score=0.11,
+        error_message=None,
+        checkpoint_path="checkpoint/model.pt",
+        started_at=datetime.now(UTC),
+        completed_at=datetime.now(UTC),
+        extra_metrics={"foo": 1},
+    )
+    assert full.status == ScenarioStatus.COMPLETED
+    assert full.extra_metrics["foo"] == 1
+
+    minimal = ScenarioResult(
+        scenario_run_id=str(generate_scenario_run_id()),
+        batch_run_id=str(generate_batch_run_id()),
+        status=ScenarioStatus.PENDING,
+        scenario_params={"dim": 5},
+    )
+    assert minimal.progress == 0.0
+    assert minimal.train_loss is None
+
+
+def test_capture_git_info_type_contract() -> None:
+    git_sha, git_dirty = capture_git_info()
+    assert git_sha is None or isinstance(git_sha, str)
+    assert git_dirty is None or isinstance(git_dirty, bool)
+
+
+def test_capture_environment_contains_required_keys() -> None:
+    environment = capture_environment()
+    assert "python_version" in environment
+    assert "os_info" in environment
+    assert isinstance(environment["packages"], dict)
