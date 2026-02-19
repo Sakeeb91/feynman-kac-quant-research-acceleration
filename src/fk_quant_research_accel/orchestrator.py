@@ -1,13 +1,31 @@
-"""Scenario generation and batch execution for quant experiments."""
+"""Scenario generation and durable batch execution for quant experiments."""
 
 from __future__ import annotations
 
+import base64
+import json
 import itertools
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
+import requests
+import structlog
+
 from .client import FKPinnClient
+from .models import (
+    ReproducibilityInfo,
+    RunManifest,
+    ScenarioStatus,
+    capture_environment,
+    capture_git_info,
+    generate_batch_run_id,
+    generate_scenario_run_id,
+    write_manifest,
+)
 from .reporting import compute_score
+from .store import ArtifactStore, MetadataStore
 
 
 @dataclass(frozen=True)
@@ -57,49 +75,269 @@ def generate_black_scholes_scenarios(
     return scenarios
 
 
+def _build_failure_record(
+    scenario: Scenario,
+    simulation_id: str,
+    error_message: str,
+) -> dict[str, Any]:
+    return {
+        "simulation_id": simulation_id,
+        "status": ScenarioStatus.FAILED.value,
+        "dim": scenario.dim,
+        "volatility": scenario.volatility,
+        "correlation": scenario.correlation,
+        "option_type": scenario.option_type,
+        "progress": 0.0,
+        "train_loss": None,
+        "val_loss": None,
+        "lr": None,
+        "grad_norm": None,
+        "score": float("inf"),
+        "error_message": error_message,
+        "checkpoint_path": None,
+    }
+
+
+def _atomic_write_bytes(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(f"{path.suffix}.tmp")
+    tmp_path.write_bytes(payload)
+    tmp_path.replace(path)
+
+
+def _fetch_checkpoint(
+    client: FKPinnClient,
+    simulation_id: str,
+    scenario_dir: Path,
+) -> Path | None:
+    log = structlog.get_logger().bind(simulation_id=simulation_id)
+    checkpoint_dir = scenario_dir / "checkpoint"
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = checkpoint_dir / "model_checkpoint.pt"
+
+    try:
+        result_envelope = client.get_result(simulation_id)
+        item = result_envelope.get("item") or {}
+        checkpoint_url = item.get("checkpoint_url")
+        checkpoint_inline = item.get("checkpoint")
+
+        if checkpoint_url:
+            response = requests.get(str(checkpoint_url), timeout=30.0)
+            response.raise_for_status()
+            _atomic_write_bytes(checkpoint_path, response.content)
+            return checkpoint_path
+
+        if checkpoint_inline:
+            _atomic_write_bytes(checkpoint_path, base64.b64decode(checkpoint_inline))
+            return checkpoint_path
+
+        log.debug("checkpoint_not_available")
+        return None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("checkpoint_fetch_failed", error=str(exc))
+        return None
+
+
 def run_batch(
     client: FKPinnClient,
     scenarios: list[Scenario],
     batch_config: BatchConfig,
     poll_seconds: float = 1.5,
     max_wait_seconds: float = 1800.0,
+    artifacts_dir: str | Path = "artifacts",
+    db_path: str | Path | None = None,
+    seed: int | None = None,
 ) -> list[dict[str, Any]]:
-    """Submit all scenarios and collect terminal results."""
-    submitted: list[tuple[Scenario, str]] = []
+    """Submit all scenarios and incrementally persist terminal results."""
+    batch_run_id = str(generate_batch_run_id())
+    log = structlog.get_logger().bind(batch_run_id=batch_run_id)
+
+    artifact_store = ArtifactStore(artifacts_dir)
+    batch_dir = artifact_store.create_batch_dir(batch_run_id)
+    effective_db_path = Path(db_path) if db_path is not None else artifact_store.root / "experiments.db"
+    metadata_store: MetadataStore | None = None
     records: list[dict[str, Any]] = []
 
-    for scenario in scenarios:
-        simulation = client.create_simulation(
-            problem_id="black_scholes",
-            parameters=scenario.as_parameters(),
-            training_config=batch_config.to_payload(),
+    try:
+        metadata_store = MetadataStore(effective_db_path)
+        git_sha, git_dirty = capture_git_info()
+        environment = capture_environment()
+        manifest = RunManifest(
+            batch_run_id=batch_run_id,
+            created_at=datetime.now(timezone.utc),
+            reproducibility=ReproducibilityInfo(
+                git_sha=git_sha,
+                git_dirty=git_dirty,
+                python_version=environment["python_version"],
+                os_info=environment["os_info"],
+                seed=seed,
+                packages=environment["packages"],
+            ),
+            batch_config=batch_config.to_payload(),
+            scenarios=[scenario.as_parameters() for scenario in scenarios],
+            backend_url=client.base_url,
         )
-        submitted.append((scenario, simulation["id"]))
+        manifest_path = write_manifest(manifest, artifact_store.root)
 
-    for scenario, simulation_id in submitted:
-        simulation = client.wait_until_terminal(
-            simulation_id=simulation_id,
-            poll_seconds=poll_seconds,
-            max_wait_seconds=max_wait_seconds,
+        metadata_store.create_batch_run(
+            batch_run_id=batch_run_id,
+            created_at=manifest.created_at.isoformat(),
+            config_json=json.dumps(batch_config.to_payload(), sort_keys=True),
+            manifest_schema_version=manifest.schema_versions.manifest_schema_version,
+            git_sha=git_sha,
+            git_dirty=git_dirty,
+            python_version=environment["python_version"],
+            os_info=environment["os_info"],
+            seed=seed,
+            scenario_count=len(scenarios),
+            artifact_path=str(batch_dir),
         )
-        result_envelope = client.get_result(simulation_id)
-        result = result_envelope["item"]
+        log.info(
+            "batch_started",
+            scenario_count=len(scenarios),
+            artifact_dir=str(batch_dir),
+            manifest_path=str(manifest_path),
+        )
 
-        metrics = result.get("metrics") or {}
-        record = {
-            "simulation_id": simulation_id,
-            "status": simulation["status"],
-            "dim": scenario.dim,
-            "volatility": scenario.volatility,
-            "correlation": scenario.correlation,
-            "option_type": scenario.option_type,
-            "progress": result.get("progress", 0.0),
-            "train_loss": metrics.get("loss", metrics.get("train_loss")),
-            "val_loss": metrics.get("val_loss"),
-            "lr": metrics.get("lr"),
-            "grad_norm": metrics.get("grad_norm"),
-        }
-        record["score"] = compute_score(record)
-        records.append(record)
+        scenario_map: list[tuple[Scenario, str, Path]] = []
+        for scenario in scenarios:
+            scenario_run_id = str(generate_scenario_run_id())
+            scenario_dir = artifact_store.create_scenario_dir(batch_run_id, scenario_run_id)
+            metadata_store.create_scenario_run(
+                scenario_run_id=scenario_run_id,
+                batch_run_id=batch_run_id,
+                scenario_json=json.dumps(scenario.as_parameters(), sort_keys=True),
+                created_at=datetime.now(timezone.utc).isoformat(),
+            )
+            scenario_map.append((scenario, scenario_run_id, scenario_dir))
 
-    return sorted(records, key=lambda row: row["score"])
+        submitted: list[tuple[Scenario, str, str, Path]] = []
+        for scenario, scenario_run_id, scenario_dir in scenario_map:
+            simulation = client.create_simulation(
+                problem_id="black_scholes",
+                parameters=scenario.as_parameters(),
+                training_config=batch_config.to_payload(),
+            )
+            simulation_id = simulation["id"]
+            metadata_store.update_scenario_status(
+                scenario_run_id=scenario_run_id,
+                status=ScenarioStatus.SUBMITTED.value,
+                simulation_id=simulation_id,
+                started_at=datetime.now(timezone.utc).isoformat(),
+            )
+            submitted.append((scenario, scenario_run_id, simulation_id, scenario_dir))
+            log.info(
+                "scenario_submitted",
+                scenario_run_id=scenario_run_id,
+                simulation_id=simulation_id,
+            )
+
+        for scenario, scenario_run_id, simulation_id, scenario_dir in submitted:
+            try:
+                simulation = client.wait_until_terminal(
+                    simulation_id=simulation_id,
+                    poll_seconds=poll_seconds,
+                    max_wait_seconds=max_wait_seconds,
+                )
+                result_envelope = client.get_result(simulation_id)
+                result = result_envelope.get("item") or {}
+                metrics = result.get("metrics") or {}
+
+                status = str(simulation.get("status", ScenarioStatus.COMPLETED.value))
+                if status not in {member.value for member in ScenarioStatus}:
+                    status = ScenarioStatus.COMPLETED.value
+
+                record = {
+                    "simulation_id": simulation_id,
+                    "status": status,
+                    "dim": scenario.dim,
+                    "volatility": scenario.volatility,
+                    "correlation": scenario.correlation,
+                    "option_type": scenario.option_type,
+                    "progress": result.get("progress", 0.0),
+                    "train_loss": metrics.get("loss", metrics.get("train_loss")),
+                    "val_loss": metrics.get("val_loss"),
+                    "lr": metrics.get("lr"),
+                    "grad_norm": metrics.get("grad_norm"),
+                    "error_message": result.get("error"),
+                    "checkpoint_path": None,
+                }
+                record["score"] = compute_score(record)
+                completed_at = datetime.now(timezone.utc).isoformat()
+
+                metadata_store.persist_scenario_result(
+                    scenario_run_id=scenario_run_id,
+                    status=record["status"],
+                    result_json=json.dumps(record, sort_keys=True),
+                    score=record["score"],
+                    error_message=record["error_message"],
+                    completed_at=completed_at,
+                )
+                artifact_store.atomic_write_json(scenario_dir / "result.json", record)
+
+                checkpoint_path = _fetch_checkpoint(client, simulation_id, scenario_dir)
+                if checkpoint_path is not None:
+                    record["checkpoint_path"] = str(checkpoint_path)
+                    artifact_store.atomic_write_json(scenario_dir / "result.json", record)
+                    metadata_store.persist_scenario_result(
+                        scenario_run_id=scenario_run_id,
+                        status=record["status"],
+                        result_json=json.dumps(record, sort_keys=True),
+                        score=record["score"],
+                        error_message=record["error_message"],
+                        completed_at=completed_at,
+                        checkpoint_path=str(checkpoint_path),
+                    )
+
+                if record["status"] == ScenarioStatus.COMPLETED.value:
+                    log.info(
+                        "scenario_completed",
+                        scenario_run_id=scenario_run_id,
+                        score=record["score"],
+                    )
+                else:
+                    log.warning(
+                        "scenario_terminal_non_completed",
+                        scenario_run_id=scenario_run_id,
+                        simulation_status=record["status"],
+                    )
+            except Exception as exc:  # noqa: BLE001
+                error_message = str(exc)
+                record = _build_failure_record(
+                    scenario=scenario,
+                    simulation_id=simulation_id,
+                    error_message=error_message,
+                )
+                completed_at = datetime.now(timezone.utc).isoformat()
+                metadata_store.persist_scenario_result(
+                    scenario_run_id=scenario_run_id,
+                    status=ScenarioStatus.FAILED.value,
+                    result_json=json.dumps(record, sort_keys=True),
+                    score=record["score"],
+                    error_message=error_message,
+                    completed_at=completed_at,
+                )
+                artifact_store.atomic_write_json(scenario_dir / "result.json", record)
+                log.error(
+                    "scenario_failed",
+                    scenario_run_id=scenario_run_id,
+                    simulation_id=simulation_id,
+                    error=error_message,
+                    exc_info=True,
+                )
+
+            records.append(record)
+
+        metadata_store.update_batch_status(batch_run_id, "completed")
+        completed_count = sum(1 for row in records if row["status"] == ScenarioStatus.COMPLETED.value)
+        failed_count = len(records) - completed_count
+        log.info(
+            "batch_completed",
+            total=len(records),
+            completed=completed_count,
+            failed=failed_count,
+        )
+        return sorted(records, key=lambda row: row["score"])
+    finally:
+        if metadata_store is not None:
+            metadata_store.close()
