@@ -145,3 +145,115 @@ def test_run_batch_writes_result_json_per_scenario(tmp_path) -> None:
         assert "status" in payload
         assert "score" in payload
         assert "dim" in payload
+
+
+def test_run_batch_records_failed_scenario_with_error(tmp_path) -> None:
+    client = MockFKPinnClient(fail_on_scenario=1)
+    artifacts_root = tmp_path / "artifacts"
+
+    rows = run_batch(
+        client=client,
+        scenarios=_scenarios(2),
+        batch_config=BatchConfig(),
+        artifacts_dir=artifacts_root,
+    )
+
+    statuses = [row["status"] for row in rows]
+    assert "completed" in statuses
+    assert "failed" in statuses
+    failed_row = next(row for row in rows if row["status"] == "failed")
+    assert failed_row["error_message"] is not None
+
+    conn = sqlite3.connect(artifacts_root / "experiments.db")
+    try:
+        scenario_rows = conn.execute(
+            "SELECT status, error_message FROM scenario_runs ORDER BY created_at ASC"
+        ).fetchall()
+        completed_count, failed_count = conn.execute(
+            "SELECT completed_count, failed_count FROM batch_runs"
+        ).fetchone()
+    finally:
+        conn.close()
+
+    assert len(scenario_rows) == 2
+    assert {row[0] for row in scenario_rows} == {"completed", "failed"}
+    assert completed_count == 1
+    assert failed_count == 1
+
+
+def test_run_batch_preserves_completed_results_when_later_scenario_fails(tmp_path) -> None:
+    client = MockFKPinnClient(fail_on_scenario=1)
+    artifacts_root = tmp_path / "artifacts"
+
+    run_batch(
+        client=client,
+        scenarios=_scenarios(2),
+        batch_config=BatchConfig(),
+        artifacts_dir=artifacts_root,
+    )
+
+    batch_dir = _single_batch_dir(artifacts_root)
+    scenario_dirs = sorted([path for path in batch_dir.iterdir() if path.is_dir()])
+    first_result = scenario_dirs[0] / "result.json"
+    second_result = scenario_dirs[1] / "result.json"
+    assert first_result.exists()
+    assert second_result.exists()
+    with first_result.open("r", encoding="utf-8") as handle:
+        first_payload = json.load(handle)
+    with second_result.open("r", encoding="utf-8") as handle:
+        second_payload = json.load(handle)
+    assert first_payload["status"] == "completed"
+    assert second_payload["status"] == "failed"
+
+
+def test_manifest_contains_reproducibility_metadata(tmp_path) -> None:
+    client = MockFKPinnClient()
+    artifacts_root = tmp_path / "artifacts"
+
+    run_batch(
+        client=client,
+        scenarios=_scenarios(1),
+        batch_config=BatchConfig(),
+        artifacts_dir=artifacts_root,
+    )
+
+    batch_dir = _single_batch_dir(artifacts_root)
+    with (batch_dir / "manifest.yaml").open("r", encoding="utf-8") as handle:
+        manifest = yaml.safe_load(handle)
+
+    assert manifest["batch_run_id"] == batch_dir.name
+    assert "created_at" in manifest
+    assert manifest["schema_versions"]["manifest_schema_version"] == 1
+    assert "python_version" in manifest["reproducibility"]
+    assert "os_info" in manifest["reproducibility"]
+    assert isinstance(manifest["scenarios"], list)
+    assert manifest["backend_url"] == "http://mock-backend:8000"
+
+
+def test_run_batch_returns_sorted_results(tmp_path) -> None:
+    client = MockFKPinnClient(losses=[0.2, 0.05, 0.15, 0.1])
+    artifacts_root = tmp_path / "artifacts"
+
+    rows = run_batch(
+        client=client,
+        scenarios=_scenarios(4),
+        batch_config=BatchConfig(),
+        artifacts_dir=artifacts_root,
+    )
+
+    scores = [row["score"] for row in rows]
+    assert scores == sorted(scores)
+
+
+def test_run_batch_backward_compatible(monkeypatch, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    client = MockFKPinnClient(checkpoint_mode="inline")
+
+    rows = run_batch(
+        client=client,
+        scenarios=_scenarios(1),
+        batch_config=BatchConfig(),
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["status"] == "completed"
