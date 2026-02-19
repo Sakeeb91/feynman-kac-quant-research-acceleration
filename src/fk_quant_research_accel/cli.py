@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
-import argparse
+from pathlib import Path
 from typing import Iterable
 
+import typer
+
 from .client import FKPinnClient
+from .logging import configure_logging
+from .models import LogLevel
 from .orchestrator import BatchConfig, generate_black_scholes_scenarios, run_batch
 from .reporting import write_csv
+
+app = typer.Typer(name="fk-research", help="FK Quant Research Acceleration Platform")
 
 
 def _parse_int_list(raw: str) -> list[int]:
@@ -30,60 +36,56 @@ def _print_top(rows: Iterable[dict], n: int = 10) -> None:
         )
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run quant scenario batches on FK PINN backend")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    run = subparsers.add_parser("run-batch", help="Submit a Black-Scholes scenario grid")
-    run.add_argument("--base-url", required=True, help="FK PINN backend base URL")
-    run.add_argument("--dimensions", default="5,10", help="Comma-separated integer dims")
-    run.add_argument("--volatilities", default="0.15,0.2", help="Comma-separated vol values")
-    run.add_argument("--correlations", default="0.0,0.3", help="Comma-separated corr values")
-    run.add_argument("--option-types", default="call", help="Comma-separated option types")
-    run.add_argument("--n-steps", type=int, default=40)
-    run.add_argument("--batch-size", type=int, default=64)
-    run.add_argument("--n-mc-paths", type=int, default=256)
-    run.add_argument("--learning-rate", type=float, default=1e-3)
-    run.add_argument("--poll-seconds", type=float, default=1.5)
-    run.add_argument("--max-wait-seconds", type=float, default=1800.0)
-    run.add_argument("--output", default="artifacts/batch_results.csv")
-
-    return parser
+@app.callback()
+def main_callback(
+    log_level: LogLevel = typer.Option(LogLevel.INFO, "--log-level", case_sensitive=False),
+) -> None:
+    configure_logging(log_level.value)
 
 
-def main() -> int:
-    parser = build_parser()
-    args = parser.parse_args()
+@app.command("run-batch")
+def run_batch_command(
+    base_url: str = typer.Option(..., "--base-url"),
+    dimensions: str = typer.Option("5,10", "--dimensions"),
+    volatilities: str = typer.Option("0.15,0.2", "--volatilities"),
+    correlations: str = typer.Option("0.0,0.3", "--correlations"),
+    option_types: str = typer.Option("call", "--option-types"),
+    n_steps: int = typer.Option(40, "--n-steps"),
+    batch_size: int = typer.Option(64, "--batch-size"),
+    n_mc_paths: int = typer.Option(256, "--n-mc-paths"),
+    learning_rate: float = typer.Option(1e-3, "--learning-rate"),
+    poll_seconds: float = typer.Option(1.5, "--poll-seconds"),
+    max_wait_seconds: float = typer.Option(1800.0, "--max-wait-seconds"),
+    output: str = typer.Option("artifacts/batch_results.csv", "--output"),
+) -> None:
+    client = FKPinnClient(base_url=base_url)
+    scenarios = generate_black_scholes_scenarios(
+        dimensions=_parse_int_list(dimensions),
+        volatilities=_parse_float_list(volatilities),
+        correlations=_parse_float_list(correlations),
+        option_types=[item.strip() for item in option_types.split(",") if item.strip()],
+    )
+    config = BatchConfig(
+        n_steps=n_steps,
+        batch_size=batch_size,
+        n_mc_paths=n_mc_paths,
+        learning_rate=learning_rate,
+    )
+    rows = run_batch(
+        client=client,
+        scenarios=scenarios,
+        batch_config=config,
+        poll_seconds=poll_seconds,
+        max_wait_seconds=max_wait_seconds,
+    )
+    output_path = write_csv(rows, output)
+    _print_top(rows)
+    print(f"Wrote {len(rows)} rows to {output_path}")
 
-    if args.command == "run-batch":
-        client = FKPinnClient(base_url=args.base_url)
-        scenarios = generate_black_scholes_scenarios(
-            dimensions=_parse_int_list(args.dimensions),
-            volatilities=_parse_float_list(args.volatilities),
-            correlations=_parse_float_list(args.correlations),
-            option_types=[item.strip() for item in args.option_types.split(",") if item.strip()],
-        )
-        config = BatchConfig(
-            n_steps=args.n_steps,
-            batch_size=args.batch_size,
-            n_mc_paths=args.n_mc_paths,
-            learning_rate=args.learning_rate,
-        )
-        rows = run_batch(
-            client=client,
-            scenarios=scenarios,
-            batch_config=config,
-            poll_seconds=args.poll_seconds,
-            max_wait_seconds=args.max_wait_seconds,
-        )
-        output = write_csv(rows, args.output)
-        _print_top(rows)
-        print(f"Wrote {len(rows)} rows to {output}")
-        return 0
 
-    parser.error("Unknown command")
-    return 2
+def main() -> None:
+    app()
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()
