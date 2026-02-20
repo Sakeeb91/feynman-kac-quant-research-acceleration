@@ -9,6 +9,7 @@ from fk_quant_research_accel.models.result import (
     CompletedScenarioResult,
     ErrorStats,
     FailedScenarioResult,
+    validate_and_build_result,
 )
 
 
@@ -109,3 +110,15 @@ def test_failed_result_metrics_optional() -> None:
 
     assert result.status == "failed"
     assert result.runtime_seconds == pytest.approx(0.0)
+
+
+def test_validate_and_build_result_dispatches_completed() -> None:
+    result = validate_and_build_result(_completed_payload())
+
+    assert isinstance(result, CompletedScenarioResult)
+
+
+def test_validate_and_build_result_dispatches_failed() -> None:
+    result = validate_and_build_result(_failed_payload())
+
+    assert isinstance(result, FailedScenarioResult)
