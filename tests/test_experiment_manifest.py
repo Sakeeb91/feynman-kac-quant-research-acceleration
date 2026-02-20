@@ -108,3 +108,30 @@ def test_content_hash_changes_on_any_field() -> None:
     assert content_hash(renamed) != base_hash
     assert content_hash(with_changed_vol) != base_hash
     assert content_hash(with_changed_architecture) != base_hash
+
+
+def test_content_hash_ignores_yaml_formatting(tmp_path: Path) -> None:
+    compact_path = tmp_path / "compact.yaml"
+    spaced_path = tmp_path / "spaced.yaml"
+
+    compact_path.write_text(
+        "backend_url: http://localhost:8000\n"
+        "scenario_grid: {dimensions: [5], volatilities: [0.2], correlations: [0.0]}\n",
+        encoding="utf-8",
+    )
+    spaced_path.write_text(
+        "backend_url: http://localhost:8000\n"
+        "scenario_grid:\n"
+        "  dimensions:\n"
+        "    - 5\n"
+        "  volatilities:\n"
+        "    - 0.2\n"
+        "  correlations:\n"
+        "    - 0.0\n",
+        encoding="utf-8",
+    )
+
+    compact_manifest = load_manifest(compact_path)
+    spaced_manifest = load_manifest(spaced_path)
+
+    assert content_hash(compact_manifest) == content_hash(spaced_manifest)
