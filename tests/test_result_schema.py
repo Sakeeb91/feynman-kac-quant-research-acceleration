@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from fk_quant_research_accel.models.result import CompletedScenarioResult
+from fk_quant_research_accel.models.result import CompletedScenarioResult, ErrorStats
 
 
 def _completed_payload() -> dict[str, Any]:
@@ -52,3 +52,31 @@ def test_completed_result_requires_rank_score() -> None:
 
     with pytest.raises(ValidationError):
         CompletedScenarioResult.model_validate(payload)
+
+
+def test_completed_result_accepts_full_payload() -> None:
+    payload = _completed_payload()
+    payload.update(
+        {
+            "val_loss": 0.06,
+            "lr": 1e-3,
+            "progress": 1.0,
+            "checkpoint_path": "artifacts/model.pt",
+            "extra_metrics": {"epochs": 40},
+        }
+    )
+
+    result = CompletedScenarioResult.model_validate(payload)
+
+    assert result.status == "completed"
+    assert result.train_loss == pytest.approx(0.05)
+    assert result.grad_norm == pytest.approx(0.12)
+    assert result.extra_metrics["epochs"] == 40
+
+
+def test_completed_result_error_stats_optional_fields() -> None:
+    stats = ErrorStats()
+
+    assert stats.pde_residual is None
+    assert stats.boundary_error is None
+    assert stats.relative_l2_error is None
