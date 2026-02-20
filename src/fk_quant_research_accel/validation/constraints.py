@@ -96,5 +96,10 @@ def validate_dimension_option_compatibility(dim: int, option_type: str) -> list[
 
 
 def validate_scalar_correlations(correlations: list[float]) -> list[str]:
-    del correlations
-    return []
+    errors: list[str] = []
+    for idx, correlation in enumerate(correlations):
+        if correlation < -1.0 or correlation > 1.0:
+            errors.append(
+                f"Scalar correlation at index {idx}={correlation} outside [-1.0, 1.0]."
+            )
+    return errors
