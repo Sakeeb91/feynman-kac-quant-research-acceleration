@@ -292,3 +292,31 @@ def test_preflight_catches_matrix_dim_mismatch() -> None:
     errors = validate_manifest(manifest)
 
     assert any("dimension mismatch" in error.message.lower() for error in errors)
+
+
+def test_preflight_catches_scalar_correlation_out_of_range() -> None:
+    grid = ScenarioGridConfig.model_construct(
+        dimensions=[5],
+        volatilities=[0.2],
+        correlations=[1.5],
+        option_types=["call"],
+    )
+    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+
+    errors = validate_manifest(manifest)
+
+    assert any(error.field == "scenario_grid.correlations.scalar" for error in errors)
+
+
+def test_preflight_catches_dim_option_incompatibility() -> None:
+    grid = ScenarioGridConfig.model_construct(
+        dimensions=[1],
+        volatilities=[0.2],
+        correlations=[0.0],
+        option_types=["basket"],
+    )
+    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+
+    errors = validate_manifest(manifest)
+
+    assert any(error.field == "scenario_grid.option_types" for error in errors)
