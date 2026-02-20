@@ -4,8 +4,18 @@ from __future__ import annotations
 
 
 def is_positive_semidefinite(matrix: list[list[float]], tol: float = 1e-10) -> bool:
-    del matrix, tol
-    return False
+    n = len(matrix)
+    if n == 0:
+        return False
+    if any(len(row) != n for row in matrix):
+        return False
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if abs(matrix[i][j] - matrix[j][i]) > tol:
+                return False
+
+    return True
 
 
 def validate_correlation_matrix(
