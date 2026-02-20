@@ -213,6 +213,7 @@ def run_batch(
     artifacts_dir: str | Path = "artifacts",
     db_path: str | Path | None = None,
     seed: int | None = None,
+    experiment_manifest_hash: str | None = None,
 ) -> list[dict[str, Any]]:
     """Submit all scenarios and incrementally persist terminal results."""
     batch_run_id = str(generate_batch_run_id())
@@ -242,6 +243,7 @@ def run_batch(
             batch_config=batch_config.to_payload(),
             scenarios=[scenario.as_parameters() for scenario in scenarios],
             backend_url=client.base_url,
+            experiment_manifest_hash=experiment_manifest_hash,
         )
         manifest_path = write_manifest(manifest, artifact_store.root)
 
