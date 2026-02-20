@@ -259,6 +259,28 @@ def test_cli_manifest_overrides_legacy_flags(monkeypatch, tmp_path) -> None:
     assert len(captured["scenarios"]) == 1
 
 
+def test_cli_manifest_load_failure_exits_1(monkeypatch, tmp_path) -> None:
+    called = {"run_batch": False}
+
+    def fake_run_batch(**kwargs):
+        called["run_batch"] = True
+        del kwargs
+        return []
+
+    manifest_path = tmp_path / "broken.yaml"
+    manifest_path.write_text("backend_url: [unclosed", encoding="utf-8")
+
+    monkeypatch.setattr(cli_module, "FKPinnClient", FakeClient)
+    monkeypatch.setattr(cli_module, "run_batch", fake_run_batch)
+    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(app, ["run-batch", "--manifest", str(manifest_path)])
+
+    assert result.exit_code == 1
+    assert called["run_batch"] is False
+
+
 def test_log_level_debug_is_accepted() -> None:
     result = runner.invoke(app, ["--log-level", "DEBUG", "--help"])
     assert result.exit_code == 0
