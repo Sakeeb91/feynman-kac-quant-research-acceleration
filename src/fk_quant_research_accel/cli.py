@@ -99,6 +99,11 @@ def run_batch_command(
             raise typer.Exit(code=1) from exc
 
         experiment_manifest_hash = content_hash(experiment)
+        log.info(
+            "manifest_loaded",
+            path=str(manifest),
+            hash=experiment_manifest_hash,
+        )
         preflight_errors = validate_manifest(experiment)
         if preflight_errors:
             for error in preflight_errors:
@@ -111,6 +116,11 @@ def run_batch_command(
             raise typer.Exit(code=1)
 
         scenarios = generate_scenarios_from_manifest(experiment)
+        log.info(
+            "preflight_passed",
+            scenario_count=len(scenarios),
+            hash=experiment_manifest_hash,
+        )
         config = BatchConfig(
             n_steps=experiment.batch_config.n_steps,
             batch_size=experiment.batch_config.batch_size,
