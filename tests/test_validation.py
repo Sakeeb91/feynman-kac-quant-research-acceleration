@@ -320,3 +320,32 @@ def test_preflight_catches_dim_option_incompatibility() -> None:
     errors = validate_manifest(manifest)
 
     assert any(error.field == "scenario_grid.option_types" for error in errors)
+
+
+def test_preflight_collects_multiple_errors() -> None:
+    grid = ScenarioGridConfig.model_construct(
+        dimensions=[1],
+        volatilities=[0.0],
+        correlations=[1.5],
+        option_types=["basket"],
+    )
+    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+
+    errors = validate_manifest(manifest)
+
+    assert len(errors) >= 3
+
+
+def test_preflight_checks_cartesian_product_combinations() -> None:
+    grid = ScenarioGridConfig.model_construct(
+        dimensions=[1, 5],
+        volatilities=[0.2],
+        correlations=[0.0],
+        option_types=["basket"],
+    )
+    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+
+    errors = validate_manifest(manifest)
+
+    assert any("dim=1" in error.message for error in errors)
+    assert not any("dim=5" in error.message for error in errors)
