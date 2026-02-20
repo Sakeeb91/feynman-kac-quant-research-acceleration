@@ -65,6 +65,9 @@ def validate_correlation_matrix(
                     f"Correlation matrix entry [{i},{j}]={value} outside [-1.0, 1.0]."
                 )
 
+    if not is_positive_semidefinite(matrix):
+        errors.append("Correlation matrix must be positive semi-definite.")
+
     return errors
 
 
