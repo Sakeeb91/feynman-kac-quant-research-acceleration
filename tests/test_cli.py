@@ -201,6 +201,64 @@ def test_cli_base_url_required_without_manifest() -> None:
     assert "--base-url is required when --manifest is not provided" in result.output
 
 
+def test_cli_manifest_overrides_legacy_flags(monkeypatch, tmp_path) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run_batch(**kwargs):
+        captured.update(kwargs)
+        return [
+            {
+                "score": 0.1,
+                "dim": 5,
+                "volatility": 0.2,
+                "correlation": 0.0,
+                "option_type": "call",
+                "status": "completed",
+                "train_loss": 0.1,
+            }
+        ]
+
+    manifest_path = _write_manifest(
+        tmp_path / "experiment.yaml",
+        {
+            "backend_url": "http://manifest-backend:9000",
+            "scenario_grid": {
+                "dimensions": [5],
+                "volatilities": [0.2],
+                "correlations": [0.0],
+                "option_types": ["call"],
+            },
+        },
+    )
+
+    monkeypatch.setattr(cli_module, "FKPinnClient", FakeClient)
+    monkeypatch.setattr(cli_module, "run_batch", fake_run_batch)
+    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(
+        app,
+        [
+            "run-batch",
+            "--manifest",
+            str(manifest_path),
+            "--base-url",
+            "http://ignored-base-url:7000",
+            "--dimensions",
+            "99",
+            "--volatilities",
+            "4.2",
+            "--correlations",
+            "0.9",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert isinstance(captured["client"], FakeClient)
+    assert captured["client"].base_url == "http://manifest-backend:9000"
+    assert len(captured["scenarios"]) == 1
+
+
 def test_log_level_debug_is_accepted() -> None:
     result = runner.invoke(app, ["--log-level", "DEBUG", "--help"])
     assert result.exit_code == 0
