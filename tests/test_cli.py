@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import yaml
 from typer.testing import CliRunner
 
+import fk_quant_research_accel.cli as cli_module
 from fk_quant_research_accel.cli import app
 
 
@@ -31,8 +35,16 @@ def test_run_batch_help_includes_expected_flags() -> None:
         "--poll-seconds",
         "--max-wait-seconds",
         "--output",
+        "--manifest",
     ]:
         assert flag in result.stdout
+
+
+def test_cli_manifest_option_exists_in_help() -> None:
+    result = runner.invoke(app, ["run-batch", "--help"])
+
+    assert result.exit_code == 0
+    assert "--manifest" in result.stdout
 
 
 def test_log_level_debug_is_accepted() -> None:
