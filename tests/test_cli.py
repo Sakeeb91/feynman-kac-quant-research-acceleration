@@ -57,6 +57,57 @@ def test_cli_manifest_option_exists_in_help() -> None:
     assert "--manifest" in result.stdout
 
 
+def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run_batch(**kwargs):
+        captured.update(kwargs)
+        return [
+            {
+                "score": 0.1,
+                "dim": 5,
+                "volatility": 0.2,
+                "correlation": 0.0,
+                "option_type": "call",
+                "status": "completed",
+                "train_loss": 0.1,
+            }
+        ]
+
+    manifest_path = _write_manifest(
+        tmp_path / "experiment.yaml",
+        {
+            "backend_url": "http://manifest-backend:9000",
+            "scenario_grid": {
+                "dimensions": [5],
+                "volatilities": [0.2],
+                "correlations": [0.0],
+                "option_types": ["call"],
+            },
+            "batch_config": {
+                "n_steps": 50,
+                "batch_size": 32,
+                "n_mc_paths": 128,
+                "learning_rate": 0.0005,
+            },
+        },
+    )
+
+    monkeypatch.setattr(cli_module, "FKPinnClient", FakeClient)
+    monkeypatch.setattr(cli_module, "run_batch", fake_run_batch)
+    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(
+        app,
+        ["run-batch", "--manifest", str(manifest_path), "--output", str(tmp_path / "out.csv")],
+    )
+
+    assert result.exit_code == 0
+    assert isinstance(captured["client"], FakeClient)
+    assert captured["client"].base_url == "http://manifest-backend:9000"
+
+
 def test_log_level_debug_is_accepted() -> None:
     result = runner.invoke(app, ["--log-level", "DEBUG", "--help"])
     assert result.exit_code == 0
