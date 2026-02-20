@@ -120,9 +120,11 @@ def _build_model_configs(manifest: ExperimentManifest) -> list[dict[str, Any]]:
 def generate_scenarios_from_manifest(manifest: ExperimentManifest) -> list[Scenario]:
     correlations = manifest.scenario_grid.correlations
     if correlations and isinstance(correlations[0], list):
-        correlation_axis: list[float | list[list[float]]] = [cast(list[list[float]], correlations)]
+        correlation_axis: tuple[float | list[list[float]], ...] = (
+            cast(list[list[float]], correlations),
+        )
     else:
-        correlation_axis = cast(list[float], correlations)
+        correlation_axis = tuple(cast(list[float], correlations))
 
     model_configs = _build_model_configs(manifest)
     scenarios: list[Scenario] = []
