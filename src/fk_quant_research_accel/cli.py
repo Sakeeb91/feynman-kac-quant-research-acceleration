@@ -156,7 +156,8 @@ def run_batch_command(
         db_path = experiment.output.db_path
         seed = experiment.seed
     else:
-        client = FKPinnClient(base_url=str(base_url))
+        assert base_url is not None
+        client = FKPinnClient(base_url=base_url)
         scenarios = generate_black_scholes_scenarios(
             dimensions=_parse_int_list(dimensions),
             volatilities=_parse_float_list(volatilities),
