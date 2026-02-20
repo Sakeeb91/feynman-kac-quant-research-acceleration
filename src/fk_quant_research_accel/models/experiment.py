@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 import yaml
 
 
@@ -13,6 +13,22 @@ class ScenarioGridConfig(BaseModel, frozen=True):
     volatilities: list[float] = Field(min_length=1)
     correlations: list[float] | list[list[float]] = Field(min_length=1)
     option_types: list[str] = Field(default_factory=lambda: ["call"])
+
+    @field_validator("dimensions")
+    @classmethod
+    def dimensions_must_be_positive(cls, value: list[int]) -> list[int]:
+        for dimension in value:
+            if dimension <= 0:
+                raise ValueError("dimensions must be positive integers")
+        return value
+
+    @field_validator("volatilities")
+    @classmethod
+    def volatilities_must_be_in_range(cls, value: list[float]) -> list[float]:
+        for volatility in value:
+            if not (0.0 < volatility <= 5.0):
+                raise ValueError("volatilities must be in the range (0.0, 5.0]")
+        return value
 
 
 class ModelSweepConfig(BaseModel, frozen=True):
