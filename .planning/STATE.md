@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** A researcher can define a 50-200 scenario batch, walk away, and come back to a ranked leaderboard with full reproducibility metadata and a deployable model package for the winner.
-**Current focus:** Phase 2 in progress (manifest schemas and strict result models established)
+**Current focus:** Phase 2 in progress (preflight validation complete, ready for CLI/orchestrator wiring)
 
 ## Current Position
 
 Phase: 2 of 7 (YAML Manifests, Validation, and Domain Models)
-Plan: 1 of 3 in current phase
-Status: Executed (ready for 02-02-PLAN.md)
-Last activity: 2026-02-20 -- Executed 02-01-PLAN.md (manifest schema, deterministic hashing, strict result schemas)
+Plan: 2 of 3 in current phase
+Status: Executed (ready for 02-03-PLAN.md)
+Last activity: 2026-02-20 -- Executed 02-02-PLAN.md (constraint validators + preflight orchestrator)
 
-Progress: [███░░░░░░░] 29%
+Progress: [████░░░░░░] 36%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: --
 - Total execution time: --
 
@@ -28,10 +28,10 @@ Progress: [███░░░░░░░] 29%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1     | 3/3   | --    | --       |
-| 2     | 1/3   | --    | --       |
+| 2     | 2/3   | --    | --       |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-02, 01-03, 02-01
+- Last 5 plans: 01-01, 01-02, 01-03, 02-01, 02-02
 - Trend: steady execution
 
 *Updated after each plan completion*
@@ -51,6 +51,9 @@ Recent decisions affecting current work:
 - [Phase 2 Plan 1]: Keep legacy ScenarioResult in place while adding strict CompletedScenarioResult/FailedScenarioResult schemas for new validation flows
 - [Phase 2 Plan 1]: Manifest content hashing uses canonical JSON (`model_dump(mode="json")` + sorted keys) to ignore YAML formatting differences
 - [Phase 2 Plan 1]: Manifest loading wraps parse/validation failures with file-path context in ValueError for clearer researcher feedback
+- [Phase 2 Plan 2]: Preflight validation aggregates all violations into structured `PreflightError` objects instead of failing fast
+- [Phase 2 Plan 2]: Pure-Python Cholesky PSD checks selected to avoid introducing numpy dependency for small correlation matrices
+- [Phase 2 Plan 2]: Unknown option types are treated as pass-through (non-error) while enforcing basket dim >= 2 compatibility
 
 ### Pending Todos
 
@@ -67,5 +70,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 02-01-PLAN.md (34 tests passing, lint/type checks clean)
-Resume file: .planning/phases/02-yaml-manifests-validation-and-domain-models/02-02-PLAN.md
+Stopped at: Completed 02-02-PLAN.md (36 validation tests passing, lint/type checks clean)
+Resume file: .planning/phases/02-yaml-manifests-validation-and-domain-models/02-03-PLAN.md
