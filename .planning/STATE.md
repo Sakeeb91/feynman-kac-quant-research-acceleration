@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** A researcher can define a 50-200 scenario batch, walk away, and come back to a ranked leaderboard with full reproducibility metadata and a deployable model package for the winner.
-**Current focus:** Phase 1 executed, UAT in progress
+**Current focus:** Phase 2 in progress (manifest schemas and strict result models established)
 
 ## Current Position
 
-Phase: 1 of 7 (Durable Storage Foundation)
-Plan: 3 of 3 in current phase
-Status: Executed (UAT in progress)
-Last activity: 2026-02-19 -- Phase 1 executed (all 3 plans complete), UAT started
+Phase: 2 of 7 (YAML Manifests, Validation, and Domain Models)
+Plan: 1 of 3 in current phase
+Status: Executed (ready for 02-02-PLAN.md)
+Last activity: 2026-02-20 -- Executed 02-01-PLAN.md (manifest schema, deterministic hashing, strict result schemas)
 
-Progress: [█░░░░░░░░░] 14%
+Progress: [███░░░░░░░] 29%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: --
 - Total execution time: --
 
@@ -28,10 +28,11 @@ Progress: [█░░░░░░░░░] 14%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1     | 3/3   | --    | --       |
+| 2     | 1/3   | --    | --       |
 
 **Recent Trend:**
-- Last 5 plans: --
-- Trend: --
+- Last 5 plans: 01-01, 01-02, 01-03, 02-01
+- Trend: steady execution
 
 *Updated after each plan completion*
 
@@ -47,6 +48,9 @@ Recent decisions affecting current work:
 - [Roadmap Revision]: CONF-05/CONF-06 (pre-flight scenario validation) moved from Phase 6 to Phase 2 -- validation must happen before concurrent execution in Phase 3, otherwise compute is wasted on invalid scenarios
 - [Roadmap Revision]: IDENT-08 (checkpoint persistence) added to Phase 1 as durable storage foundation -- prerequisite for PKG-01..05 in Phase 7
 - [Roadmap Revision]: Phase 6 renamed from "Scenario Validation and Extensibility" to "Extensibility" (now only EXT-01..04)
+- [Phase 2 Plan 1]: Keep legacy ScenarioResult in place while adding strict CompletedScenarioResult/FailedScenarioResult schemas for new validation flows
+- [Phase 2 Plan 1]: Manifest content hashing uses canonical JSON (`model_dump(mode="json")` + sorted keys) to ignore YAML formatting differences
+- [Phase 2 Plan 1]: Manifest loading wraps parse/validation failures with file-path context in ValueError for clearer researcher feedback
 
 ### Pending Todos
 
@@ -62,6 +66,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-19
-Stopped at: Phase 1 executed, UAT in progress (7 tests, 0 completed so far)
-Resume file: .planning/phases/01-durable-storage-foundation/01-UAT.md
+Last session: 2026-02-20
+Stopped at: Completed 02-01-PLAN.md (34 tests passing, lint/type checks clean)
+Resume file: .planning/phases/02-yaml-manifests-validation-and-domain-models/02-02-PLAN.md

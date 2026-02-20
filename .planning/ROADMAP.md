@@ -53,7 +53,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- ExperimentManifest schema, content hashing, and strict result schemas (TDD)
+- [x] 02-01-PLAN.md -- ExperimentManifest schema, content hashing, and strict result schemas (TDD)
 - [ ] 02-02-PLAN.md -- Domain-specific pre-flight validation (PSD, ranges, compatibility) (TDD)
 - [ ] 02-03-PLAN.md -- CLI --manifest option, scenario generation from manifest, orchestrator wiring
 
@@ -133,7 +133,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Durable Storage Foundation | 3/3 | Executed (UAT in progress) | 2026-02-19 |
-| 2. YAML Manifests, Validation, and Domain Models | 0/3 | Planned | - |
+| 2. YAML Manifests, Validation, and Domain Models | 1/3 | In progress | - |
 | 3. Concurrent Durable Execution | 0/2 | Not started | - |
 | 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Not started | - |
 | 5. Run Analysis CLI | 0/1 | Not started | - |
@@ -142,4 +142,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 ---
 *Roadmap created: 2026-02-19*
-*Last updated: 2026-02-20 (Phase 2 planned: 3 plans in 3 waves)*
+*Last updated: 2026-02-20 (Executed 02-01-PLAN.md; Phase 2 now 1/3 complete)*
