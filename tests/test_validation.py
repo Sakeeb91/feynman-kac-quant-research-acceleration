@@ -3,6 +3,7 @@ from __future__ import annotations
 from fk_quant_research_accel.validation.constraints import (
     is_positive_semidefinite,
     validate_correlation_matrix,
+    validate_dimension_option_compatibility,
     validate_volatility_range,
 )
 
@@ -173,5 +174,29 @@ def test_validate_volatility_too_high() -> None:
 
 def test_validate_volatility_upper_bound() -> None:
     errors = validate_volatility_range([5.0])
+
+    assert errors == []
+
+
+def test_dim_option_compat_single_asset_call() -> None:
+    errors = validate_dimension_option_compatibility(dim=1, option_type="call")
+
+    assert errors == []
+
+
+def test_dim_option_compat_multi_asset_call() -> None:
+    errors = validate_dimension_option_compatibility(dim=5, option_type="call")
+
+    assert errors == []
+
+
+def test_dim_option_compat_basket_needs_multidim() -> None:
+    errors = validate_dimension_option_compatibility(dim=1, option_type="basket")
+
+    assert any("dim >= 2" in error for error in errors)
+
+
+def test_dim_option_compat_barrier_any_dim() -> None:
+    errors = validate_dimension_option_compatibility(dim=1, option_type="barrier_up_and_out")
 
     assert errors == []
