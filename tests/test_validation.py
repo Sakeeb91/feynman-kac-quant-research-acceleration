@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from fk_quant_research_accel.validation.constraints import (
     is_positive_semidefinite,
     validate_correlation_matrix,
@@ -7,6 +9,8 @@ from fk_quant_research_accel.validation.constraints import (
     validate_scalar_correlations,
     validate_volatility_range,
 )
+from fk_quant_research_accel.validation.preflight import PreflightError, validate_manifest
+from fk_quant_research_accel.models.experiment import ExperimentManifest, ScenarioGridConfig
 
 
 def test_psd_identity_matrix() -> None:
@@ -219,3 +223,37 @@ def test_scalar_correlation_below_range() -> None:
     errors = validate_scalar_correlations([-1.5])
 
     assert any("[-1.0, 1.0]" in error for error in errors)
+
+
+def _valid_manifest() -> ExperimentManifest:
+    return ExperimentManifest.model_validate(
+        {
+            "backend_url": "http://localhost:8000",
+            "scenario_grid": {
+                "dimensions": [5],
+                "volatilities": [0.2],
+                "correlations": [0.3],
+                "option_types": ["call"],
+            },
+        }
+    )
+
+
+def test_preflight_valid_manifest() -> None:
+    errors = validate_manifest(_valid_manifest())
+
+    assert errors == []
+
+
+def test_preflight_catches_invalid_volatility() -> None:
+    grid = ScenarioGridConfig.model_construct(
+        dimensions=[5],
+        volatilities=[0.0],
+        correlations=[0.3],
+        option_types=["call"],
+    )
+    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+
+    errors = validate_manifest(manifest)
+
+    assert any(error.field == "scenario_grid.volatilities" for error in errors)
