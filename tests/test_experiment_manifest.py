@@ -61,3 +61,17 @@ def test_manifest_requires_scenario_grid() -> None:
 
     with pytest.raises(ValidationError):
         ExperimentManifest.model_validate(payload)
+
+
+def test_manifest_defaults() -> None:
+    manifest = ExperimentManifest.model_validate(_minimal_manifest_dict())
+
+    assert manifest.model_sweep.architectures == ["default"]
+    assert manifest.batch_config.n_steps == 40
+    assert manifest.batch_config.batch_size == 64
+    assert manifest.batch_config.n_mc_paths == 256
+    assert manifest.batch_config.learning_rate == pytest.approx(1e-3)
+    assert manifest.scoring.strategy == "loss_based"
+    assert manifest.scoring.grad_norm_weight == pytest.approx(0.01)
+    assert manifest.output.artifacts_dir == "artifacts"
+    assert manifest.output.db_path is None
