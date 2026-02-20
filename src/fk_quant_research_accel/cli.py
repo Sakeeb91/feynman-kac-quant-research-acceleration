@@ -31,6 +31,10 @@ def _parse_float_list(raw: str) -> list[float]:
     return [float(item.strip()) for item in raw.split(",") if item.strip()]
 
 
+def _parse_str_list(raw: str) -> list[str]:
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
 def _log_top(rows: Iterable[dict], n: int = 10) -> None:
     log = structlog.get_logger()
     for idx, row in enumerate(rows):
@@ -139,7 +143,7 @@ def run_batch_command(
             dimensions=_parse_int_list(dimensions),
             volatilities=_parse_float_list(volatilities),
             correlations=_parse_float_list(correlations),
-            option_types=[item.strip() for item in option_types.split(",") if item.strip()],
+            option_types=_parse_str_list(option_types),
         )
         config = BatchConfig(
             n_steps=n_steps,
