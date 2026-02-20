@@ -58,7 +58,16 @@ def main_callback(
 
 @app.command("run-batch")
 def run_batch_command(
-    base_url: str = typer.Option(..., "--base-url"),
+    base_url: str | None = typer.Option(None, "--base-url"),
+    manifest: Path | None = typer.Option(
+        None,
+        "--manifest",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        help="Path to experiment YAML manifest. Overrides all other config flags.",
+    ),
     dimensions: str = typer.Option("5,10", "--dimensions"),
     volatilities: str = typer.Option("0.15,0.2", "--volatilities"),
     correlations: str = typer.Option("0.0,0.3", "--correlations"),
