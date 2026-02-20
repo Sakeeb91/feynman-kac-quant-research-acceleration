@@ -289,6 +289,26 @@ def test_run_batch_persists_checkpoint_when_available(tmp_path) -> None:
     assert checkpoint_path.read_bytes() == b"checkpoint-bytes"
 
 
+def test_run_batch_includes_manifest_hash_when_provided(tmp_path) -> None:
+    client = MockFKPinnClient()
+    artifacts_root = tmp_path / "artifacts"
+    manifest_hash = "abc123"
+
+    run_batch(
+        client=client,
+        scenarios=_scenarios(1),
+        batch_config=BatchConfig(),
+        artifacts_dir=artifacts_root,
+        experiment_manifest_hash=manifest_hash,
+    )
+
+    batch_dir = _single_batch_dir(artifacts_root)
+    with (batch_dir / "manifest.yaml").open("r", encoding="utf-8") as handle:
+        manifest = yaml.safe_load(handle)
+
+    assert manifest["experiment_manifest_hash"] == manifest_hash
+
+
 def test_generate_scenarios_from_manifest_basic() -> None:
     manifest = ExperimentManifest.model_validate(
         {
