@@ -45,3 +45,19 @@ scenario_grid:
 
     assert manifest.backend_url == "http://localhost:8000"
     assert manifest.scenario_grid.dimensions == [5]
+
+
+def test_manifest_requires_backend_url() -> None:
+    payload = _minimal_manifest_dict()
+    payload.pop("backend_url")
+
+    with pytest.raises(ValidationError):
+        ExperimentManifest.model_validate(payload)
+
+
+def test_manifest_requires_scenario_grid() -> None:
+    payload = _minimal_manifest_dict()
+    payload.pop("scenario_grid")
+
+    with pytest.raises(ValidationError):
+        ExperimentManifest.model_validate(payload)
