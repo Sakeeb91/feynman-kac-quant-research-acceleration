@@ -46,6 +46,15 @@ def validate_manifest(manifest: ExperimentManifest) -> list[PreflightError]:
                     message=message,
                 )
             )
+        for dim in grid.dimensions:
+            for message in validate_correlation_matrix(matrix, expected_dim=dim):
+                errors.append(
+                    PreflightError(
+                        field="scenario_grid.correlations.matrix",
+                        value={"expected_dim": dim, "matrix": matrix},
+                        message=message,
+                    )
+                )
     else:
         scalars = grid.correlations
         for message in validate_scalar_correlations(scalars):
