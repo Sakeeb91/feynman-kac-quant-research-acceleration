@@ -12,6 +12,16 @@ from fk_quant_research_accel.cli import app
 runner = CliRunner()
 
 
+class FakeClient:
+    def __init__(self, base_url: str) -> None:
+        self.base_url = base_url
+
+
+def _write_manifest(path: Path, payload: dict[str, object]) -> Path:
+    path.write_text(yaml.safe_dump(payload, sort_keys=True), encoding="utf-8")
+    return path
+
+
 def test_help_includes_program_name_and_log_level() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
