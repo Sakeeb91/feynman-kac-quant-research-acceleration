@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import replace
-
 from fk_quant_research_accel.validation.constraints import (
     is_positive_semidefinite,
     validate_correlation_matrix,
@@ -349,3 +347,35 @@ def test_preflight_checks_cartesian_product_combinations() -> None:
 
     assert any("dim=1" in error.message for error in errors)
     assert not any("dim=5" in error.message for error in errors)
+
+
+def test_preflight_valid_scalar_correlations() -> None:
+    grid = ScenarioGridConfig.model_construct(
+        dimensions=[5],
+        volatilities=[0.2],
+        correlations=[0.0, 0.3],
+        option_types=["call"],
+    )
+    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+
+    errors = validate_manifest(manifest)
+
+    assert errors == []
+
+
+def test_preflight_returns_preflight_error_objects() -> None:
+    grid = ScenarioGridConfig.model_construct(
+        dimensions=[1],
+        volatilities=[0.0],
+        correlations=[1.5],
+        option_types=["basket"],
+    )
+    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+
+    errors = validate_manifest(manifest)
+
+    assert errors
+    assert all(isinstance(error, PreflightError) for error in errors)
+    assert all(hasattr(error, "field") for error in errors)
+    assert all(hasattr(error, "value") for error in errors)
+    assert all(hasattr(error, "message") for error in errors)
