@@ -374,3 +374,33 @@ def test_generate_scenarios_from_manifest_default_model_sweep() -> None:
     assert len(scenarios) == 1
     assert scenarios[0].model_config is not None
     assert scenarios[0].model_config["architecture"] == "default"
+
+
+def test_generate_scenarios_from_manifest_correlation_matrix() -> None:
+    correlation_matrix = [
+        [1.0, 0.3],
+        [0.3, 1.0],
+    ]
+    manifest = ExperimentManifest.model_validate(
+        {
+            "backend_url": "http://localhost:8000",
+            "scenario_grid": {
+                "dimensions": [2],
+                "volatilities": [0.2],
+                "correlations": correlation_matrix,
+                "option_types": ["call"],
+            },
+        }
+    )
+
+    scenarios = generate_scenarios_from_manifest(manifest)
+
+    assert len(scenarios) == 1
+    assert scenarios[0].correlation == correlation_matrix
+
+
+def test_scenario_backward_compat() -> None:
+    scenario = Scenario(dim=5, volatility=0.2, correlation=0.3)
+
+    assert scenario.option_type == "call"
+    assert scenario.model_config is None
