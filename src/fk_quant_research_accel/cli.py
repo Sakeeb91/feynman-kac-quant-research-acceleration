@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Iterable
 
 import structlog
@@ -9,9 +10,15 @@ import typer
 
 from .client import FKPinnClient
 from .logging import configure_logging
-from .models import LogLevel
-from .orchestrator import BatchConfig, generate_black_scholes_scenarios, run_batch
+from .models import LogLevel, content_hash, load_manifest
+from .orchestrator import (
+    BatchConfig,
+    generate_black_scholes_scenarios,
+    generate_scenarios_from_manifest,
+    run_batch,
+)
 from .reporting import write_csv
+from .validation import validate_manifest
 
 app = typer.Typer(name="fk-research", help="FK Quant Research Acceleration Platform")
 
