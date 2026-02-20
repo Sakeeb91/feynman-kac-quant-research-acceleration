@@ -12,7 +12,7 @@ This roadmap transforms a fragile prototype into a reliable research acceleratio
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Durable Storage Foundation** - Run identity, artifact directories, checkpoint persistence, SQLite metadata, crash-safe writes, structured logging
+- [x] **Phase 1: Durable Storage Foundation** - Run identity, artifact directories, checkpoint persistence, SQLite metadata, crash-safe writes, structured logging
 - [ ] **Phase 2: YAML Manifests, Validation, and Domain Models** - Config-driven experiment definition with validated Pydantic schemas and pre-flight scenario validation
 - [ ] **Phase 3: Concurrent Durable Execution** - Async batch execution with concurrency, retry, resume, and unattended SLO
 - [ ] **Phase 4: Scoring, Diagnostics, and Leaderboards** - Pluggable scoring, convergence health detection, ranked leaderboard output
@@ -36,9 +36,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Domain models (Pydantic v2) and storage layer (SQLite + filesystem artifacts)
-- [ ] 01-02-PLAN.md -- CLI migration to Typer and structured logging with structlog
-- [ ] 01-03-PLAN.md -- Orchestrator integration with incremental writes, manifest generation, and checkpoint fetch
+- [x] 01-01-PLAN.md -- Domain models (Pydantic v2) and storage layer (SQLite + filesystem artifacts)
+- [x] 01-02-PLAN.md -- CLI migration to Typer and structured logging with structlog
+- [x] 01-03-PLAN.md -- Orchestrator integration with incremental writes, manifest generation, and checkpoint fetch
 
 ### Phase 2: YAML Manifests, Validation, and Domain Models
 **Goal**: Researchers define experiments in version-controlled YAML files with validated schemas, and invalid parameter combinations are caught at pre-flight before any simulation is submitted
@@ -131,7 +131,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Durable Storage Foundation | 0/3 | Planned | - |
+| 1. Durable Storage Foundation | 3/3 | Executed (UAT in progress) | 2026-02-19 |
 | 2. YAML Manifests, Validation, and Domain Models | 0/2 | Not started | - |
 | 3. Concurrent Durable Execution | 0/2 | Not started | - |
 | 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Not started | - |
@@ -141,4 +141,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 ---
 *Roadmap created: 2026-02-19*
-*Last updated: 2026-02-19 (Phase 1 planned)*
+*Last updated: 2026-02-19 (Phase 1 executed, UAT in progress)*
