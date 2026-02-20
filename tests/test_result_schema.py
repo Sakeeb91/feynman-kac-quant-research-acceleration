@@ -36,3 +36,19 @@ def test_completed_result_requires_grad_norm() -> None:
 
     with pytest.raises(ValidationError):
         CompletedScenarioResult.model_validate(payload)
+
+
+def test_completed_result_requires_runtime_seconds() -> None:
+    payload = _completed_payload()
+    payload.pop("runtime_seconds")
+
+    with pytest.raises(ValidationError):
+        CompletedScenarioResult.model_validate(payload)
+
+
+def test_completed_result_requires_rank_score() -> None:
+    payload = _completed_payload()
+    payload.pop("rank_score")
+
+    with pytest.raises(ValidationError):
+        CompletedScenarioResult.model_validate(payload)
