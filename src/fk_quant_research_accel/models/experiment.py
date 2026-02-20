@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator
 import yaml
 
 from .enums import OptionType, ScoringStrategy
@@ -90,5 +90,5 @@ def load_manifest(path: str | Path) -> ExperimentManifest:
 
     try:
         return ExperimentManifest.model_validate(raw)
-    except Exception as exc:
+    except ValidationError as exc:
         raise ValueError(f"Manifest validation failed for {target}: {exc}") from exc
