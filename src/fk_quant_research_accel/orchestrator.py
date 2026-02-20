@@ -32,16 +32,20 @@ from .store import ArtifactStore, MetadataStore
 class Scenario:
     dim: int
     volatility: float
-    correlation: float
+    correlation: float | list[list[float]]
     option_type: str = "call"
+    model_config: dict[str, Any] | None = None
 
     def as_parameters(self) -> dict[str, Any]:
-        return {
+        params: dict[str, Any] = {
             "dim": self.dim,
             "volatility": self.volatility,
             "correlation": self.correlation,
             "option_type": self.option_type,
         }
+        if self.model_config is not None:
+            params["model_config"] = self.model_config
+        return params
 
 
 @dataclass(frozen=True)
