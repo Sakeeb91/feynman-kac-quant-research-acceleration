@@ -110,3 +110,37 @@ def test_validate_corr_matrix_non_unit_diagonal() -> None:
     errors = validate_correlation_matrix(matrix)
 
     assert any("diagonal" in error.lower() for error in errors)
+
+
+def test_validate_corr_matrix_out_of_range() -> None:
+    matrix = [
+        [1.0, 1.2],
+        [1.2, 1.0],
+    ]
+
+    errors = validate_correlation_matrix(matrix)
+
+    assert any("[-1.0, 1.0]" in error for error in errors)
+
+
+def test_validate_corr_matrix_not_psd() -> None:
+    matrix = [
+        [1.0, 0.9, 0.9],
+        [0.9, 1.0, -0.9],
+        [0.9, -0.9, 1.0],
+    ]
+
+    errors = validate_correlation_matrix(matrix)
+
+    assert any("positive semi-definite" in error.lower() for error in errors)
+
+
+def test_validate_corr_matrix_collects_all_errors() -> None:
+    matrix = [
+        [0.5, 1.2],
+        [1.2, 0.5],
+    ]
+
+    errors = validate_correlation_matrix(matrix, expected_dim=3)
+
+    assert len(errors) >= 3
