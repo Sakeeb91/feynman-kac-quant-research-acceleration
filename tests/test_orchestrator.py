@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import yaml
 import structlog
+import pytest
 
 from fk_quant_research_accel.logging import configure_logging
 from fk_quant_research_accel.models.experiment import ExperimentManifest
@@ -424,3 +425,24 @@ def test_scenario_backward_compat() -> None:
 
     assert scenario.option_type == "call"
     assert scenario.model_config is None
+
+
+def test_generate_scenarios_from_manifest_rejects_mismatched_model_axes() -> None:
+    manifest = ExperimentManifest.model_validate(
+        {
+            "backend_url": "http://localhost:8000",
+            "scenario_grid": {
+                "dimensions": [5],
+                "volatilities": [0.2],
+                "correlations": [0.0],
+                "option_types": ["call"],
+            },
+            "model_sweep": {
+                "architectures": ["default", "resmlp"],
+                "hidden_sizes": [[64, 64]],
+            },
+        }
+    )
+
+    with pytest.raises(ValueError):
+        generate_scenarios_from_manifest(manifest)
