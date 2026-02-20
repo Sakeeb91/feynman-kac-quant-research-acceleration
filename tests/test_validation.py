@@ -4,6 +4,7 @@ from fk_quant_research_accel.validation.constraints import (
     is_positive_semidefinite,
     validate_correlation_matrix,
     validate_dimension_option_compatibility,
+    validate_scalar_correlations,
     validate_volatility_range,
 )
 
@@ -200,3 +201,21 @@ def test_dim_option_compat_barrier_any_dim() -> None:
     errors = validate_dimension_option_compatibility(dim=1, option_type="barrier_up_and_out")
 
     assert errors == []
+
+
+def test_scalar_correlation_valid() -> None:
+    errors = validate_scalar_correlations([0.0, 0.5, -0.5, 1.0, -1.0])
+
+    assert errors == []
+
+
+def test_scalar_correlation_out_of_range() -> None:
+    errors = validate_scalar_correlations([1.5])
+
+    assert any("[-1.0, 1.0]" in error for error in errors)
+
+
+def test_scalar_correlation_below_range() -> None:
+    errors = validate_scalar_correlations([-1.5])
+
+    assert any("[-1.0, 1.0]" in error for error in errors)
