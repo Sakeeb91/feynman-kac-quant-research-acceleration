@@ -4,6 +4,14 @@ from __future__ import annotations
 
 import math
 
+__all__ = [
+    "is_positive_semidefinite",
+    "validate_correlation_matrix",
+    "validate_volatility_range",
+    "validate_dimension_option_compatibility",
+    "validate_scalar_correlations",
+]
+
 
 def is_positive_semidefinite(matrix: list[list[float]], tol: float = 1e-10) -> bool:
     n = len(matrix)
