@@ -75,3 +75,10 @@ def test_manifest_defaults() -> None:
     assert manifest.scoring.grad_norm_weight == pytest.approx(0.01)
     assert manifest.output.artifacts_dir == "artifacts"
     assert manifest.output.db_path is None
+
+
+def test_manifest_frozen() -> None:
+    manifest = ExperimentManifest.model_validate(_minimal_manifest_dict())
+
+    with pytest.raises(ValidationError):
+        manifest.backend_url = "http://127.0.0.1:9000"  # type: ignore[misc]
