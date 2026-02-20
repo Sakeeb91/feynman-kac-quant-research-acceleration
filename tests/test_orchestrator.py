@@ -354,3 +354,23 @@ def test_generate_scenarios_from_manifest_model_config_in_params() -> None:
     assert "model_config" in params
     assert params["model_config"]["architecture"] == "resmlp"
     assert params["model_config"]["hidden_size"] == [128, 128]
+
+
+def test_generate_scenarios_from_manifest_default_model_sweep() -> None:
+    manifest = ExperimentManifest.model_validate(
+        {
+            "backend_url": "http://localhost:8000",
+            "scenario_grid": {
+                "dimensions": [5],
+                "volatilities": [0.2],
+                "correlations": [0.0],
+                "option_types": ["call"],
+            },
+        }
+    )
+
+    scenarios = generate_scenarios_from_manifest(manifest)
+
+    assert len(scenarios) == 1
+    assert scenarios[0].model_config is not None
+    assert scenarios[0].model_config["architecture"] == "default"
