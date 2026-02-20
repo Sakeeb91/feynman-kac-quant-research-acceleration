@@ -122,3 +122,19 @@ def test_validate_and_build_result_dispatches_failed() -> None:
     result = validate_and_build_result(_failed_payload())
 
     assert isinstance(result, FailedScenarioResult)
+
+
+def test_validate_and_build_result_rejects_unknown_status() -> None:
+    payload = _completed_payload()
+    payload["status"] = "unknown"
+
+    with pytest.raises(ValueError):
+        validate_and_build_result(payload)
+
+
+def test_validate_and_build_result_rejects_malformed_completed() -> None:
+    payload = _completed_payload()
+    payload.pop("train_loss")
+
+    with pytest.raises(ValidationError):
+        validate_and_build_result(payload)
