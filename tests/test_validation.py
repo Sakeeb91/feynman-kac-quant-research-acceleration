@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from fk_quant_research_accel.validation.constraints import is_positive_semidefinite
+from fk_quant_research_accel.validation.constraints import (
+    is_positive_semidefinite,
+    validate_correlation_matrix,
+)
 
 
 def test_psd_identity_matrix() -> None:
@@ -74,3 +77,36 @@ def test_psd_negative_diagonal() -> None:
     ]
 
     assert is_positive_semidefinite(matrix) is False
+
+
+def test_validate_corr_matrix_valid() -> None:
+    matrix = [
+        [1.0, 0.5],
+        [0.5, 1.0],
+    ]
+
+    errors = validate_correlation_matrix(matrix, expected_dim=2)
+
+    assert errors == []
+
+
+def test_validate_corr_matrix_wrong_dimension() -> None:
+    matrix = [
+        [1.0, 0.5],
+        [0.5, 1.0],
+    ]
+
+    errors = validate_correlation_matrix(matrix, expected_dim=3)
+
+    assert any("dimension" in error.lower() for error in errors)
+
+
+def test_validate_corr_matrix_non_unit_diagonal() -> None:
+    matrix = [
+        [0.9, 0.1],
+        [0.1, 1.0],
+    ]
+
+    errors = validate_correlation_matrix(matrix)
+
+    assert any("diagonal" in error.lower() for error in errors)
