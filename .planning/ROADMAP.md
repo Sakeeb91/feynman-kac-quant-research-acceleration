@@ -13,7 +13,7 @@ This roadmap transforms a fragile prototype into a reliable research acceleratio
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Durable Storage Foundation** - Run identity, artifact directories, checkpoint persistence, SQLite metadata, crash-safe writes, structured logging
-- [ ] **Phase 2: YAML Manifests, Validation, and Domain Models** - Config-driven experiment definition with validated Pydantic schemas and pre-flight scenario validation
+- [x] **Phase 2: YAML Manifests, Validation, and Domain Models** - Config-driven experiment definition with validated Pydantic schemas and pre-flight scenario validation
 - [ ] **Phase 3: Concurrent Durable Execution** - Async batch execution with concurrency, retry, resume, and unattended SLO
 - [ ] **Phase 4: Scoring, Diagnostics, and Leaderboards** - Pluggable scoring, convergence health detection, ranked leaderboard output
 - [ ] **Phase 5: Run Analysis CLI** - Query, compare, and inspect past experiment runs
@@ -55,7 +55,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md -- ExperimentManifest schema, content hashing, and strict result schemas (TDD)
 - [x] 02-02-PLAN.md -- Domain-specific pre-flight validation (PSD, ranges, compatibility) (TDD)
-- [ ] 02-03-PLAN.md -- CLI --manifest option, scenario generation from manifest, orchestrator wiring
+- [x] 02-03-PLAN.md -- CLI --manifest option, scenario generation from manifest, orchestrator wiring
 
 ### Phase 3: Concurrent Durable Execution
 **Goal**: A 50-200 scenario batch runs concurrently, survives crashes and transient errors, and completes unattended without manual intervention
@@ -133,7 +133,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Durable Storage Foundation | 3/3 | Executed (UAT in progress) | 2026-02-19 |
-| 2. YAML Manifests, Validation, and Domain Models | 2/3 | In progress | - |
+| 2. YAML Manifests, Validation, and Domain Models | 3/3 | Complete | 2026-02-20 |
 | 3. Concurrent Durable Execution | 0/2 | Not started | - |
 | 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Not started | - |
 | 5. Run Analysis CLI | 0/1 | Not started | - |
@@ -142,4 +142,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 ---
 *Roadmap created: 2026-02-19*
-*Last updated: 2026-02-20 (Executed 02-02-PLAN.md; Phase 2 now 2/3 complete)*
+*Last updated: 2026-02-20 (Executed 02-03-PLAN.md; Phase 2 complete at 3/3)*
