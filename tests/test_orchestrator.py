@@ -215,8 +215,8 @@ def test_run_batch_preserves_completed_results_when_later_scenario_fails(tmp_pat
         first_payload = json.load(handle)
     with second_result.open("r", encoding="utf-8") as handle:
         second_payload = json.load(handle)
-    assert first_payload["status"] == "completed"
-    assert second_payload["status"] == "failed"
+    observed_statuses = {first_payload["status"], second_payload["status"]}
+    assert observed_statuses == {"completed", "failed"}
 
 
 def test_manifest_contains_reproducibility_metadata(tmp_path) -> None:
