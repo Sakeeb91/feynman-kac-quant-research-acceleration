@@ -81,7 +81,10 @@ def run_batch_command(
     output: str = typer.Option("artifacts/batch_results.csv", "--output"),
 ) -> None:
     log = structlog.get_logger()
-    client = FKPinnClient(base_url=base_url)
+    if manifest is None and not base_url:
+        raise typer.BadParameter("--base-url is required when --manifest is not provided")
+
+    client = FKPinnClient(base_url=str(base_url))
     scenarios = generate_black_scholes_scenarios(
         dimensions=_parse_int_list(dimensions),
         volatilities=_parse_float_list(volatilities),
