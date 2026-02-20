@@ -186,6 +186,13 @@ def test_cli_backward_compat_flags(monkeypatch, tmp_path) -> None:
     assert captured["client"].base_url == "http://legacy-backend:8000"
 
 
+def test_cli_base_url_required_without_manifest() -> None:
+    result = runner.invoke(app, ["run-batch"])
+
+    assert result.exit_code != 0
+    assert "--base-url is required when --manifest is not provided" in result.output
+
+
 def test_log_level_debug_is_accepted() -> None:
     result = runner.invoke(app, ["--log-level", "DEBUG", "--help"])
     assert result.exit_code == 0
