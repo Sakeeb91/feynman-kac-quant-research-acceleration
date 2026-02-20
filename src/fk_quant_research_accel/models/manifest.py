@@ -37,6 +37,7 @@ class RunManifest(BaseModel, frozen=True):
     batch_config: dict[str, Any]
     scenarios: list[dict[str, Any]]
     backend_url: str
+    experiment_manifest_hash: str | None = None
 
 
 def write_manifest(manifest: RunManifest, artifact_dir: Path) -> Path:
