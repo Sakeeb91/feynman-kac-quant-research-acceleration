@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from fk_quant_research_accel.models.experiment import ExperimentManifest, load_manifest
+from fk_quant_research_accel.models.hashing import content_hash
 
 
 def _minimal_manifest_dict() -> dict[str, object]:
@@ -82,3 +83,12 @@ def test_manifest_frozen() -> None:
 
     with pytest.raises(ValidationError):
         manifest.backend_url = "http://127.0.0.1:9000"  # type: ignore[misc]
+
+
+def test_content_hash_deterministic() -> None:
+    manifest = ExperimentManifest.model_validate(_minimal_manifest_dict())
+
+    first = content_hash(manifest)
+    second = content_hash(manifest)
+
+    assert first == second
