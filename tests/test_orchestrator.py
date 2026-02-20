@@ -305,3 +305,25 @@ def test_generate_scenarios_from_manifest_basic() -> None:
     scenarios = generate_scenarios_from_manifest(manifest)
 
     assert len(scenarios) == 4
+
+
+def test_generate_scenarios_from_manifest_with_model_sweep() -> None:
+    manifest = ExperimentManifest.model_validate(
+        {
+            "backend_url": "http://localhost:8000",
+            "scenario_grid": {
+                "dimensions": [5, 10],
+                "volatilities": [0.2],
+                "correlations": [0.0],
+                "option_types": ["call"],
+            },
+            "model_sweep": {
+                "architectures": ["default", "resmlp"],
+            },
+        }
+    )
+
+    scenarios = generate_scenarios_from_manifest(manifest)
+
+    assert len(scenarios) == 4
+    assert all(scenario.model_config is not None for scenario in scenarios)
