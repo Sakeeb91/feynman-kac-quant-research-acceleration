@@ -78,6 +78,7 @@ def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
         tmp_path / "experiment.yaml",
         {
             "backend_url": "http://manifest-backend:9000",
+            "seed": 123,
             "scenario_grid": {
                 "dimensions": [5],
                 "volatilities": [0.2],
@@ -89,6 +90,10 @@ def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
                 "batch_size": 32,
                 "n_mc_paths": 128,
                 "learning_rate": 0.0005,
+            },
+            "output": {
+                "artifacts_dir": str(tmp_path / "artifacts"),
+                "db_path": str(tmp_path / "custom.db"),
             },
         },
     )
@@ -106,6 +111,9 @@ def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
     assert result.exit_code == 0
     assert isinstance(captured["client"], FakeClient)
     assert captured["client"].base_url == "http://manifest-backend:9000"
+    assert captured["experiment_manifest_hash"] is not None
+    assert captured["seed"] == 123
+    assert str(captured["artifacts_dir"]).endswith("artifacts")
 
 
 def test_cli_manifest_preflight_fails_exits_1(monkeypatch, tmp_path) -> None:
