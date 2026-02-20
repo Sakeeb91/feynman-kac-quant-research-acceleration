@@ -194,3 +194,9 @@ def test_volatilities_must_be_in_range() -> None:
 
     with pytest.raises(ValidationError):
         ExperimentManifest.model_validate(too_high_vol)
+
+
+def test_manifest_version_field() -> None:
+    manifest = ExperimentManifest.model_validate(_minimal_manifest_dict())
+
+    assert manifest.manifest_version == 1
