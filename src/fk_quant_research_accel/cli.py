@@ -84,25 +84,70 @@ def run_batch_command(
     if manifest is None and not base_url:
         raise typer.BadParameter("--base-url is required when --manifest is not provided")
 
-    client = FKPinnClient(base_url=str(base_url))
-    scenarios = generate_black_scholes_scenarios(
-        dimensions=_parse_int_list(dimensions),
-        volatilities=_parse_float_list(volatilities),
-        correlations=_parse_float_list(correlations),
-        option_types=[item.strip() for item in option_types.split(",") if item.strip()],
-    )
-    config = BatchConfig(
-        n_steps=n_steps,
-        batch_size=batch_size,
-        n_mc_paths=n_mc_paths,
-        learning_rate=learning_rate,
-    )
+    effective_poll_seconds = poll_seconds
+    effective_max_wait_seconds = max_wait_seconds
+    artifacts_dir: str | Path = "artifacts"
+    db_path: str | Path | None = None
+    seed: int | None = None
+    experiment_manifest_hash: str | None = None
+
+    if manifest is not None:
+        try:
+            experiment = load_manifest(manifest)
+        except ValueError as exc:
+            log.error("manifest_load_failed", path=str(manifest), error=str(exc))
+            raise typer.Exit(code=1) from exc
+
+        experiment_manifest_hash = content_hash(experiment)
+        preflight_errors = validate_manifest(experiment)
+        if preflight_errors:
+            for error in preflight_errors:
+                log.error(
+                    "preflight_validation_failed",
+                    field=error.field,
+                    value=error.value,
+                    message=error.message,
+                )
+            raise typer.Exit(code=1)
+
+        scenarios = generate_scenarios_from_manifest(experiment)
+        config = BatchConfig(
+            n_steps=experiment.batch_config.n_steps,
+            batch_size=experiment.batch_config.batch_size,
+            n_mc_paths=experiment.batch_config.n_mc_paths,
+            learning_rate=experiment.batch_config.learning_rate,
+        )
+        client = FKPinnClient(base_url=experiment.backend_url)
+        effective_poll_seconds = experiment.batch_config.poll_seconds
+        effective_max_wait_seconds = experiment.batch_config.max_wait_seconds
+        artifacts_dir = experiment.output.artifacts_dir
+        db_path = experiment.output.db_path
+        seed = experiment.seed
+    else:
+        client = FKPinnClient(base_url=str(base_url))
+        scenarios = generate_black_scholes_scenarios(
+            dimensions=_parse_int_list(dimensions),
+            volatilities=_parse_float_list(volatilities),
+            correlations=_parse_float_list(correlations),
+            option_types=[item.strip() for item in option_types.split(",") if item.strip()],
+        )
+        config = BatchConfig(
+            n_steps=n_steps,
+            batch_size=batch_size,
+            n_mc_paths=n_mc_paths,
+            learning_rate=learning_rate,
+        )
+
     rows = run_batch(
         client=client,
         scenarios=scenarios,
         batch_config=config,
-        poll_seconds=poll_seconds,
-        max_wait_seconds=max_wait_seconds,
+        poll_seconds=effective_poll_seconds,
+        max_wait_seconds=effective_max_wait_seconds,
+        artifacts_dir=artifacts_dir,
+        db_path=db_path,
+        seed=seed,
+        experiment_manifest_hash=experiment_manifest_hash,
     )
     output_path = write_csv(rows, output)
     _log_top(rows)
