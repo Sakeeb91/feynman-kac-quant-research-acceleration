@@ -152,3 +152,24 @@ def test_model_sweep_config() -> None:
     assert manifest.model_sweep.hidden_sizes == [[64, 64], [128, 128]]
     assert manifest.model_sweep.activations == ["tanh", "gelu"]
     assert manifest.model_sweep.optimizers == ["adam", "adamw"]
+
+
+def test_dimensions_must_be_positive() -> None:
+    zero_dim = _minimal_manifest_dict()
+    zero_dim["scenario_grid"] = {
+        "dimensions": [0],
+        "volatilities": [0.2],
+        "correlations": [0.0],
+    }
+    negative_dim = _minimal_manifest_dict()
+    negative_dim["scenario_grid"] = {
+        "dimensions": [-1],
+        "volatilities": [0.2],
+        "correlations": [0.0],
+    }
+
+    with pytest.raises(ValidationError):
+        ExperimentManifest.model_validate(zero_dim)
+
+    with pytest.raises(ValidationError):
+        ExperimentManifest.model_validate(negative_dim)
