@@ -7,12 +7,14 @@ from pathlib import Path
 from pydantic import BaseModel, Field, field_validator
 import yaml
 
+from .enums import OptionType, ScoringStrategy
+
 
 class ScenarioGridConfig(BaseModel, frozen=True):
     dimensions: list[int] = Field(min_length=1)
     volatilities: list[float] = Field(min_length=1)
     correlations: list[float] | list[list[float]] = Field(min_length=1)
-    option_types: list[str] = Field(default_factory=lambda: ["call"])
+    option_types: list[OptionType] = Field(default_factory=lambda: [OptionType.CALL])
 
     @field_validator("dimensions")
     @classmethod
@@ -48,7 +50,7 @@ class BatchRunConfig(BaseModel, frozen=True):
 
 
 class ScoringConfig(BaseModel, frozen=True):
-    strategy: str = "loss_based"
+    strategy: ScoringStrategy = ScoringStrategy.LOSS_BASED
     grad_norm_weight: float = Field(default=0.01, ge=0.0)
 
 
