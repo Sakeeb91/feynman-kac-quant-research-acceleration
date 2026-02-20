@@ -473,3 +473,26 @@ def test_generate_scenarios_from_manifest_maps_model_axes_by_index() -> None:
     assert len(scenarios) == 2
     assert {"architecture": "default", "hidden_size": [64, 64], "activation": "tanh", "optimizer": "adam"} in configs
     assert {"architecture": "resmlp", "hidden_size": [128, 128], "activation": "gelu", "optimizer": "adamw"} in configs
+
+
+def test_generate_scenarios_from_manifest_cartesian_product_all_axes() -> None:
+    manifest = ExperimentManifest.model_validate(
+        {
+            "backend_url": "http://localhost:8000",
+            "scenario_grid": {
+                "dimensions": [5, 10],
+                "volatilities": [0.2],
+                "correlations": [0.0],
+                "option_types": ["call", "put"],
+            },
+            "model_sweep": {
+                "architectures": ["default", "resmlp"],
+            },
+        }
+    )
+
+    scenarios = generate_scenarios_from_manifest(manifest)
+    unique_pairs = {(scenario.dim, scenario.option_type, scenario.model_config["architecture"]) for scenario in scenarios}
+
+    assert len(scenarios) == 8
+    assert len(unique_pairs) == 8
