@@ -9,12 +9,14 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from typing import cast
 
 import requests
 import structlog
 
 from .client import FKPinnClient
 from .models import (
+    ExperimentManifest,
     ReproducibilityInfo,
     RunManifest,
     ScenarioStatus,
@@ -76,6 +78,70 @@ def generate_black_scholes_scenarios(
         Scenario(dim=d, volatility=v, correlation=c, option_type=o)
         for d, v, c, o in itertools.product(dimensions, volatilities, correlations, option_types)
     ]
+    return scenarios
+
+
+def _validate_model_sweep_axis_lengths(manifest: ExperimentManifest) -> None:
+    architectures = manifest.model_sweep.architectures
+    expected = len(architectures)
+    axis_map: dict[str, list[Any] | None] = {
+        "hidden_sizes": manifest.model_sweep.hidden_sizes,
+        "activations": manifest.model_sweep.activations,
+        "optimizers": manifest.model_sweep.optimizers,
+    }
+    for axis_name, axis_values in axis_map.items():
+        if axis_values is None:
+            continue
+        if len(axis_values) != expected:
+            raise ValueError(
+                f"model_sweep.{axis_name} must match architectures length "
+                f"({expected}), got {len(axis_values)}."
+            )
+
+
+def _build_model_configs(manifest: ExperimentManifest) -> list[dict[str, Any]]:
+    _validate_model_sweep_axis_lengths(manifest)
+    configs: list[dict[str, Any]] = []
+    architectures = manifest.model_sweep.architectures
+
+    for index, architecture in enumerate(architectures):
+        config: dict[str, Any] = {"architecture": architecture}
+        if manifest.model_sweep.hidden_sizes is not None:
+            config["hidden_size"] = manifest.model_sweep.hidden_sizes[index]
+        if manifest.model_sweep.activations is not None:
+            config["activation"] = manifest.model_sweep.activations[index]
+        if manifest.model_sweep.optimizers is not None:
+            config["optimizer"] = manifest.model_sweep.optimizers[index]
+        configs.append(config)
+
+    return configs
+
+
+def generate_scenarios_from_manifest(manifest: ExperimentManifest) -> list[Scenario]:
+    correlations = manifest.scenario_grid.correlations
+    if correlations and isinstance(correlations[0], list):
+        correlation_axis: list[float | list[list[float]]] = [cast(list[list[float]], correlations)]
+    else:
+        correlation_axis = cast(list[float], correlations)
+
+    model_configs = _build_model_configs(manifest)
+    scenarios: list[Scenario] = []
+    for dim, volatility, correlation, option_type, model_config in itertools.product(
+        manifest.scenario_grid.dimensions,
+        manifest.scenario_grid.volatilities,
+        correlation_axis,
+        manifest.scenario_grid.option_types,
+        model_configs,
+    ):
+        scenarios.append(
+            Scenario(
+                dim=dim,
+                volatility=volatility,
+                correlation=correlation,
+                option_type=getattr(option_type, "value", option_type),
+                model_config=dict(model_config),
+            )
+        )
     return scenarios
 
 
