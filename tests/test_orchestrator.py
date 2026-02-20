@@ -446,3 +446,30 @@ def test_generate_scenarios_from_manifest_rejects_mismatched_model_axes() -> Non
 
     with pytest.raises(ValueError):
         generate_scenarios_from_manifest(manifest)
+
+
+def test_generate_scenarios_from_manifest_maps_model_axes_by_index() -> None:
+    manifest = ExperimentManifest.model_validate(
+        {
+            "backend_url": "http://localhost:8000",
+            "scenario_grid": {
+                "dimensions": [5],
+                "volatilities": [0.2],
+                "correlations": [0.0],
+                "option_types": ["call"],
+            },
+            "model_sweep": {
+                "architectures": ["default", "resmlp"],
+                "hidden_sizes": [[64, 64], [128, 128]],
+                "activations": ["tanh", "gelu"],
+                "optimizers": ["adam", "adamw"],
+            },
+        }
+    )
+
+    scenarios = generate_scenarios_from_manifest(manifest)
+    configs = [scenario.model_config for scenario in scenarios]
+
+    assert len(scenarios) == 2
+    assert {"architecture": "default", "hidden_size": [64, 64], "activation": "tanh", "optimizer": "adam"} in configs
+    assert {"architecture": "resmlp", "hidden_size": [128, 128], "activation": "gelu", "optimizer": "adamw"} in configs
