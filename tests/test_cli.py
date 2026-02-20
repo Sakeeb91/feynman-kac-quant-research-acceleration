@@ -140,6 +140,52 @@ def test_cli_manifest_preflight_fails_exits_1(monkeypatch, tmp_path) -> None:
     assert called["run_batch"] is False
 
 
+def test_cli_backward_compat_flags(monkeypatch, tmp_path) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run_batch(**kwargs):
+        captured.update(kwargs)
+        return [
+            {
+                "score": 0.1,
+                "dim": 5,
+                "volatility": 0.2,
+                "correlation": 0.0,
+                "option_type": "call",
+                "status": "completed",
+                "train_loss": 0.1,
+            }
+        ]
+
+    monkeypatch.setattr(cli_module, "FKPinnClient", FakeClient)
+    monkeypatch.setattr(cli_module, "run_batch", fake_run_batch)
+    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(
+        app,
+        [
+            "run-batch",
+            "--base-url",
+            "http://legacy-backend:8000",
+            "--dimensions",
+            "5",
+            "--volatilities",
+            "0.2",
+            "--correlations",
+            "0.0",
+            "--option-types",
+            "call",
+            "--output",
+            str(tmp_path / "legacy.csv"),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert isinstance(captured["client"], FakeClient)
+    assert captured["client"].base_url == "http://legacy-backend:8000"
+
+
 def test_log_level_debug_is_accepted() -> None:
     result = runner.invoke(app, ["--log-level", "DEBUG", "--help"])
     assert result.exit_code == 0
