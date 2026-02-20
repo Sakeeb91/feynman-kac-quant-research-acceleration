@@ -5,10 +5,12 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
+from fk_quant_research_accel.models.enums import ScenarioStatus
 from fk_quant_research_accel.models.result import (
     CompletedScenarioResult,
     ErrorStats,
     FailedScenarioResult,
+    ScenarioResult,
     validate_and_build_result,
 )
 
@@ -138,3 +140,14 @@ def test_validate_and_build_result_rejects_malformed_completed() -> None:
 
     with pytest.raises(ValidationError):
         validate_and_build_result(payload)
+
+
+def test_backward_compat_scenario_result_still_works() -> None:
+    result = ScenarioResult(
+        scenario_run_id="scenario-legacy",
+        batch_run_id="batch-legacy",
+        status=ScenarioStatus.PENDING,
+        scenario_params={"dim": 5},
+    )
+
+    assert result.status == ScenarioStatus.PENDING
