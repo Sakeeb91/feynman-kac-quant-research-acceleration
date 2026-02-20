@@ -86,7 +86,12 @@ def validate_volatility_range(
 
 
 def validate_dimension_option_compatibility(dim: int, option_type: str) -> list[str]:
-    del dim, option_type
+    normalized = option_type.strip().lower()
+    basket_like = {"basket", "basket_call", "basket_put"}
+    if normalized in basket_like and dim < 2:
+        return [
+            f"Option type '{option_type}' requires dim >= 2, got dim={dim}.",
+        ]
     return []
 
 
