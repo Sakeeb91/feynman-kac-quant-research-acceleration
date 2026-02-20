@@ -173,3 +173,24 @@ def test_dimensions_must_be_positive() -> None:
 
     with pytest.raises(ValidationError):
         ExperimentManifest.model_validate(negative_dim)
+
+
+def test_volatilities_must_be_in_range() -> None:
+    zero_vol = _minimal_manifest_dict()
+    zero_vol["scenario_grid"] = {
+        "dimensions": [5],
+        "volatilities": [0.0],
+        "correlations": [0.0],
+    }
+    too_high_vol = _minimal_manifest_dict()
+    too_high_vol["scenario_grid"] = {
+        "dimensions": [5],
+        "volatilities": [6.0],
+        "correlations": [0.0],
+    }
+
+    with pytest.raises(ValidationError):
+        ExperimentManifest.model_validate(zero_vol)
+
+    with pytest.raises(ValidationError):
+        ExperimentManifest.model_validate(too_high_vol)
