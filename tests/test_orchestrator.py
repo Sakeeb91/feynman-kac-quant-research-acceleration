@@ -10,7 +10,13 @@ import yaml
 import structlog
 
 from fk_quant_research_accel.logging import configure_logging
-from fk_quant_research_accel.orchestrator import BatchConfig, Scenario, run_batch
+from fk_quant_research_accel.models.experiment import ExperimentManifest
+from fk_quant_research_accel.orchestrator import (
+    BatchConfig,
+    Scenario,
+    generate_scenarios_from_manifest,
+    run_batch,
+)
 
 
 class MockFKPinnClient:
@@ -281,3 +287,21 @@ def test_run_batch_persists_checkpoint_when_available(tmp_path) -> None:
     checkpoint_path = Path(rows[0]["checkpoint_path"])
     assert checkpoint_path.exists()
     assert checkpoint_path.read_bytes() == b"checkpoint-bytes"
+
+
+def test_generate_scenarios_from_manifest_basic() -> None:
+    manifest = ExperimentManifest.model_validate(
+        {
+            "backend_url": "http://localhost:8000",
+            "scenario_grid": {
+                "dimensions": [5, 10],
+                "volatilities": [0.15, 0.2],
+                "correlations": [0.0],
+                "option_types": ["call"],
+            },
+        }
+    )
+
+    scenarios = generate_scenarios_from_manifest(manifest)
+
+    assert len(scenarios) == 4
