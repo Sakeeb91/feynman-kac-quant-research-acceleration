@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -32,4 +32,22 @@ class ScenarioResult(BaseModel, frozen=True):
     checkpoint_path: str | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
+    extra_metrics: dict[str, Any] = Field(default_factory=dict)
+
+
+class CompletedScenarioResult(BaseModel, frozen=True):
+    status: Literal["completed"]
+    scenario_run_id: str
+    batch_run_id: str
+    simulation_id: str
+    scenario_params: dict[str, Any]
+    train_loss: float
+    grad_norm: float
+    runtime_seconds: float
+    rank_score: float
+    error_stats: ErrorStats = Field(default_factory=ErrorStats)
+    val_loss: float | None = None
+    lr: float | None = None
+    progress: float = 1.0
+    checkpoint_path: str | None = None
     extra_metrics: dict[str, Any] = Field(default_factory=dict)
