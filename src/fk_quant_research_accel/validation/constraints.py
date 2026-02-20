@@ -76,8 +76,13 @@ def validate_volatility_range(
     low: float = 0.0,
     high: float = 5.0,
 ) -> list[str]:
-    del volatilities, low, high
-    return []
+    errors: list[str] = []
+    for idx, volatility in enumerate(volatilities):
+        if volatility <= low or volatility > high:
+            errors.append(
+                f"Volatility at index {idx}={volatility} must be in ({low}, {high}]."
+            )
+    return errors
 
 
 def validate_dimension_option_compatibility(dim: int, option_type: str) -> list[str]:
