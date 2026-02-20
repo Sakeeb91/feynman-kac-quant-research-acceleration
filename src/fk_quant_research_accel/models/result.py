@@ -63,3 +63,14 @@ class FailedScenarioResult(BaseModel, frozen=True):
     runtime_seconds: float = 0.0
     rank_score: float = float("inf")
     extra_metrics: dict[str, Any] = Field(default_factory=dict)
+
+
+def validate_and_build_result(
+    raw: dict[str, Any],
+) -> CompletedScenarioResult | FailedScenarioResult:
+    status = raw.get("status")
+    if status == ScenarioStatus.COMPLETED.value:
+        return CompletedScenarioResult.model_validate(raw)
+    if status == ScenarioStatus.FAILED.value:
+        return FailedScenarioResult.model_validate(raw)
+    raise ValueError(f"Unknown result status: {status!r}")
