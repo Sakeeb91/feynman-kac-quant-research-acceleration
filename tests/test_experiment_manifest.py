@@ -92,3 +92,19 @@ def test_content_hash_deterministic() -> None:
     second = content_hash(manifest)
 
     assert first == second
+
+
+def test_content_hash_changes_on_any_field() -> None:
+    base = ExperimentManifest.model_validate(_minimal_manifest_dict())
+    renamed = base.model_copy(update={"name": "experiment-a"})
+
+    updated_grid = base.scenario_grid.model_copy(update={"volatilities": [0.25]})
+    with_changed_vol = base.model_copy(update={"scenario_grid": updated_grid})
+
+    updated_sweep = base.model_sweep.model_copy(update={"architectures": ["mlp"]})
+    with_changed_architecture = base.model_copy(update={"model_sweep": updated_sweep})
+
+    base_hash = content_hash(base)
+    assert content_hash(renamed) != base_hash
+    assert content_hash(with_changed_vol) != base_hash
+    assert content_hash(with_changed_architecture) != base_hash
