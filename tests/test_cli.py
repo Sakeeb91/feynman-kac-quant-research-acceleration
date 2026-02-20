@@ -108,6 +108,38 @@ def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
     assert captured["client"].base_url == "http://manifest-backend:9000"
 
 
+def test_cli_manifest_preflight_fails_exits_1(monkeypatch, tmp_path) -> None:
+    called = {"run_batch": False}
+
+    def fake_run_batch(**kwargs):
+        called["run_batch"] = True
+        del kwargs
+        return []
+
+    manifest_path = _write_manifest(
+        tmp_path / "invalid.yaml",
+        {
+            "backend_url": "http://manifest-backend:9000",
+            "scenario_grid": {
+                "dimensions": [3],
+                "volatilities": [0.2],
+                "correlations": [[1.0, 0.5], [0.5, 1.0]],
+                "option_types": ["call"],
+            },
+        },
+    )
+
+    monkeypatch.setattr(cli_module, "FKPinnClient", FakeClient)
+    monkeypatch.setattr(cli_module, "run_batch", fake_run_batch)
+    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(app, ["run-batch", "--manifest", str(manifest_path)])
+
+    assert result.exit_code == 1
+    assert called["run_batch"] is False
+
+
 def test_log_level_debug_is_accepted() -> None:
     result = runner.invoke(app, ["--log-level", "DEBUG", "--help"])
     assert result.exit_code == 0
