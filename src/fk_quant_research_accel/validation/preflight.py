@@ -14,6 +14,8 @@ from fk_quant_research_accel.validation.constraints import (
     validate_volatility_range,
 )
 
+__all__ = ["PreflightError", "validate_manifest"]
+
 
 @dataclass(frozen=True)
 class PreflightError:
@@ -30,6 +32,10 @@ def _append_messages(
 ) -> None:
     for message in messages:
         errors.append(PreflightError(field=field, value=value, message=message))
+
+
+def _coerce_option_type(option_type: Any) -> str:
+    return cast(str, getattr(option_type, "value", option_type))
 
 
 def validate_manifest(manifest: ExperimentManifest) -> list[PreflightError]:
@@ -74,7 +80,7 @@ def validate_manifest(manifest: ExperimentManifest) -> list[PreflightError]:
         )
 
     for dim, option_type in product(grid.dimensions, grid.option_types):
-        option_value = getattr(option_type, "value", option_type)
+        option_value = _coerce_option_type(option_type)
         for message in validate_dimension_option_compatibility(dim=dim, option_type=option_value):
             errors.append(
                 PreflightError(
