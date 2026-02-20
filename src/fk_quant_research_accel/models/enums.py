@@ -26,3 +26,9 @@ class OptionType(str, Enum):
     PUT = "put"
     ASIAN_CALL = "asian_call"
     BARRIER_UP_AND_OUT = "barrier_up_and_out"
+
+
+class ScoringStrategy(str, Enum):
+    LOSS_BASED = "loss_based"
+    CONVERGENCE_RATE = "convergence_rate"
+    PARETO_MULTI_OBJECTIVE = "pareto_multi_objective"
