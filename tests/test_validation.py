@@ -237,6 +237,10 @@ def _valid_manifest() -> ExperimentManifest:
     )
 
 
+def _manifest_with_grid(grid: ScenarioGridConfig) -> ExperimentManifest:
+    return _valid_manifest().model_copy(update={"scenario_grid": grid})
+
+
 def test_preflight_valid_manifest() -> None:
     errors = validate_manifest(_valid_manifest())
 
@@ -250,7 +254,7 @@ def test_preflight_catches_invalid_volatility() -> None:
         correlations=[0.3],
         option_types=["call"],
     )
-    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+    manifest = _manifest_with_grid(grid)
 
     errors = validate_manifest(manifest)
 
@@ -268,7 +272,7 @@ def test_preflight_catches_non_psd_correlation_matrix() -> None:
         ],
         option_types=["call"],
     )
-    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+    manifest = _manifest_with_grid(grid)
 
     errors = validate_manifest(manifest)
 
@@ -285,7 +289,7 @@ def test_preflight_catches_matrix_dim_mismatch() -> None:
         ],
         option_types=["call"],
     )
-    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+    manifest = _manifest_with_grid(grid)
 
     errors = validate_manifest(manifest)
 
@@ -299,7 +303,7 @@ def test_preflight_catches_scalar_correlation_out_of_range() -> None:
         correlations=[1.5],
         option_types=["call"],
     )
-    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+    manifest = _manifest_with_grid(grid)
 
     errors = validate_manifest(manifest)
 
@@ -313,7 +317,7 @@ def test_preflight_catches_dim_option_incompatibility() -> None:
         correlations=[0.0],
         option_types=["basket"],
     )
-    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+    manifest = _manifest_with_grid(grid)
 
     errors = validate_manifest(manifest)
 
@@ -327,7 +331,7 @@ def test_preflight_collects_multiple_errors() -> None:
         correlations=[1.5],
         option_types=["basket"],
     )
-    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+    manifest = _manifest_with_grid(grid)
 
     errors = validate_manifest(manifest)
 
@@ -341,7 +345,7 @@ def test_preflight_checks_cartesian_product_combinations() -> None:
         correlations=[0.0],
         option_types=["basket"],
     )
-    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+    manifest = _manifest_with_grid(grid)
 
     errors = validate_manifest(manifest)
 
@@ -356,7 +360,7 @@ def test_preflight_valid_scalar_correlations() -> None:
         correlations=[0.0, 0.3],
         option_types=["call"],
     )
-    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+    manifest = _manifest_with_grid(grid)
 
     errors = validate_manifest(manifest)
 
@@ -370,7 +374,7 @@ def test_preflight_returns_preflight_error_objects() -> None:
         correlations=[1.5],
         option_types=["basket"],
     )
-    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+    manifest = _manifest_with_grid(grid)
 
     errors = validate_manifest(manifest)
 
