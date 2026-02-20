@@ -7,6 +7,7 @@ from typer.testing import CliRunner
 
 import fk_quant_research_accel.cli as cli_module
 from fk_quant_research_accel.cli import app
+from fk_quant_research_accel.validation import PreflightError
 
 
 runner = CliRunner()
@@ -278,6 +279,47 @@ def test_cli_manifest_load_failure_exits_1(monkeypatch, tmp_path) -> None:
     result = runner.invoke(app, ["run-batch", "--manifest", str(manifest_path)])
 
     assert result.exit_code == 1
+    assert called["run_batch"] is False
+
+
+def test_cli_manifest_preflight_logs_all_errors(monkeypatch, tmp_path) -> None:
+    called = {"run_batch": False}
+
+    def fake_run_batch(**kwargs):
+        called["run_batch"] = True
+        del kwargs
+        return []
+
+    manifest_path = _write_manifest(
+        tmp_path / "experiment.yaml",
+        {
+            "backend_url": "http://manifest-backend:9000",
+            "scenario_grid": {
+                "dimensions": [5],
+                "volatilities": [0.2],
+                "correlations": [0.0],
+                "option_types": ["call"],
+            },
+        },
+    )
+
+    monkeypatch.setattr(cli_module, "FKPinnClient", FakeClient)
+    monkeypatch.setattr(cli_module, "run_batch", fake_run_batch)
+    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+    monkeypatch.setattr(
+        cli_module,
+        "validate_manifest",
+        lambda manifest: [
+            PreflightError(field="field.one", value=1, message="first error"),
+            PreflightError(field="field.two", value=2, message="second error"),
+        ],
+    )
+
+    result = runner.invoke(app, ["run-batch", "--manifest", str(manifest_path)])
+
+    assert result.exit_code == 1
+    assert result.output.count("preflight_validation_failed") >= 2
     assert called["run_batch"] is False
 
 
