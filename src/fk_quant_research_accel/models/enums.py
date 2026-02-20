@@ -19,3 +19,10 @@ class LogLevel(str, Enum):
     INFO = "INFO"
     WARNING = "WARNING"
     ERROR = "ERROR"
+
+
+class OptionType(str, Enum):
+    CALL = "call"
+    PUT = "put"
+    ASIAN_CALL = "asian_call"
+    BARRIER_UP_AND_OUT = "barrier_up_and_out"
