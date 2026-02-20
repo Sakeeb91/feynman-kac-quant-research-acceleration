@@ -10,6 +10,12 @@ from pydantic import BaseModel, Field
 from .enums import ScenarioStatus
 
 
+class ErrorStats(BaseModel, frozen=True):
+    pde_residual: float | None = None
+    boundary_error: float | None = None
+    relative_l2_error: float | None = None
+
+
 class ScenarioResult(BaseModel, frozen=True):
     scenario_run_id: str
     batch_run_id: str
