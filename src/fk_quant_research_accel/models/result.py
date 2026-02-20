@@ -51,3 +51,15 @@ class CompletedScenarioResult(BaseModel, frozen=True):
     progress: float = 1.0
     checkpoint_path: str | None = None
     extra_metrics: dict[str, Any] = Field(default_factory=dict)
+
+
+class FailedScenarioResult(BaseModel, frozen=True):
+    status: Literal["failed"]
+    scenario_run_id: str
+    batch_run_id: str
+    simulation_id: str | None = None
+    scenario_params: dict[str, Any]
+    error_message: str
+    runtime_seconds: float = 0.0
+    rank_score: float = float("inf")
+    extra_metrics: dict[str, Any] = Field(default_factory=dict)
