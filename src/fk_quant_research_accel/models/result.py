@@ -16,6 +16,7 @@ class ErrorStats(BaseModel, frozen=True):
     relative_l2_error: float | None = None
 
 
+# Legacy/internal result schema used by existing orchestrator/store paths.
 class ScenarioResult(BaseModel, frozen=True):
     scenario_run_id: str
     batch_run_id: str

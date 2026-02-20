@@ -20,7 +20,13 @@ from .manifest import (
     capture_git_info,
     write_manifest,
 )
-from .result import ScenarioResult
+from .result import (
+    CompletedScenarioResult,
+    ErrorStats,
+    FailedScenarioResult,
+    ScenarioResult,
+    validate_and_build_result,
+)
 
 __all__ = [
     "BatchRunId",
@@ -46,4 +52,8 @@ __all__ = [
     "capture_git_info",
     "capture_environment",
     "ScenarioResult",
+    "ErrorStats",
+    "CompletedScenarioResult",
+    "FailedScenarioResult",
+    "validate_and_build_result",
 ]
