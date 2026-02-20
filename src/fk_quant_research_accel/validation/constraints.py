@@ -38,8 +38,34 @@ def validate_correlation_matrix(
     matrix: list[list[float]],
     expected_dim: int | None = None,
 ) -> list[str]:
-    del matrix, expected_dim
-    return []
+    errors: list[str] = []
+    n = len(matrix)
+
+    if n == 0:
+        return ["Correlation matrix cannot be empty."]
+
+    if any(len(row) != n for row in matrix):
+        errors.append("Correlation matrix must be square.")
+        return errors
+
+    if expected_dim is not None and n != expected_dim:
+        errors.append(
+            f"Correlation matrix dimension mismatch: expected {expected_dim}, got {n}."
+        )
+
+    for idx in range(n):
+        if abs(matrix[idx][idx] - 1.0) > 1e-10:
+            errors.append(f"Correlation matrix diagonal must be 1.0 at [{idx},{idx}].")
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            value = matrix[i][j]
+            if value < -1.0 or value > 1.0:
+                errors.append(
+                    f"Correlation matrix entry [{i},{j}]={value} outside [-1.0, 1.0]."
+                )
+
+    return errors
 
 
 def validate_volatility_range(
