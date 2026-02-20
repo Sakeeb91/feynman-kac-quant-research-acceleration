@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 
 def is_positive_semidefinite(matrix: list[list[float]], tol: float = 1e-10) -> bool:
     n = len(matrix)
@@ -14,6 +16,20 @@ def is_positive_semidefinite(matrix: list[list[float]], tol: float = 1e-10) -> b
         for j in range(i + 1, n):
             if abs(matrix[i][j] - matrix[j][i]) > tol:
                 return False
+
+    lower = [[0.0] * n for _ in range(n)]
+    for i in range(n):
+        for j in range(i + 1):
+            partial = sum(lower[i][k] * lower[j][k] for k in range(j))
+            if i == j:
+                candidate = matrix[i][i] - partial
+                if candidate < -tol:
+                    return False
+                lower[i][j] = math.sqrt(max(candidate, 0.0))
+            else:
+                if abs(lower[j][j]) <= tol:
+                    return False
+                lower[i][j] = (matrix[i][j] - partial) / lower[j][j]
 
     return True
 
