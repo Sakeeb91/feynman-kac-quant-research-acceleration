@@ -72,7 +72,21 @@ class ExperimentManifest(BaseModel, frozen=True):
 
 
 def load_manifest(path: str | Path) -> ExperimentManifest:
-    with Path(path).open("r", encoding="utf-8") as handle:
-        raw = yaml.safe_load(handle)
+    target = Path(path)
+    try:
+        with target.open("r", encoding="utf-8") as handle:
+            raw = yaml.safe_load(handle)
+    except OSError as exc:
+        raise ValueError(f"Failed to load manifest at {target}: {exc}") from exc
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Invalid YAML in manifest at {target}: {exc}") from exc
 
-    return ExperimentManifest.model_validate(raw)
+    if raw is None:
+        raise ValueError(f"Manifest at {target} is empty")
+    if not isinstance(raw, dict):
+        raise ValueError(f"Manifest at {target} must contain a top-level mapping")
+
+    try:
+        return ExperimentManifest.model_validate(raw)
+    except Exception as exc:
+        raise ValueError(f"Manifest validation failed for {target}: {exc}") from exc
