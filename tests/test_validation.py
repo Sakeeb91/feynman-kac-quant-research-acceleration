@@ -257,3 +257,38 @@ def test_preflight_catches_invalid_volatility() -> None:
     errors = validate_manifest(manifest)
 
     assert any(error.field == "scenario_grid.volatilities" for error in errors)
+
+
+def test_preflight_catches_non_psd_correlation_matrix() -> None:
+    grid = ScenarioGridConfig.model_construct(
+        dimensions=[3],
+        volatilities=[0.2],
+        correlations=[
+            [1.0, 0.9, 0.9],
+            [0.9, 1.0, -0.9],
+            [0.9, -0.9, 1.0],
+        ],
+        option_types=["call"],
+    )
+    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+
+    errors = validate_manifest(manifest)
+
+    assert any(error.field == "scenario_grid.correlations.matrix" for error in errors)
+
+
+def test_preflight_catches_matrix_dim_mismatch() -> None:
+    grid = ScenarioGridConfig.model_construct(
+        dimensions=[3],
+        volatilities=[0.2],
+        correlations=[
+            [1.0, 0.5],
+            [0.5, 1.0],
+        ],
+        option_types=["call"],
+    )
+    manifest = _valid_manifest().model_copy(update={"scenario_grid": grid})
+
+    errors = validate_manifest(manifest)
+
+    assert any("dimension mismatch" in error.message.lower() for error in errors)
