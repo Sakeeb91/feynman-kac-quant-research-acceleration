@@ -10,7 +10,7 @@ import typer
 
 from .client import FKPinnClient
 from .logging import configure_logging
-from .models import LogLevel, content_hash, load_manifest
+from .models import ExperimentManifest, LogLevel, content_hash, load_manifest
 from .orchestrator import (
     BatchConfig,
     generate_black_scholes_scenarios,
@@ -51,6 +51,29 @@ def _log_top(rows: Iterable[dict], n: int = 10) -> None:
             status=row["status"],
             train_loss=row["train_loss"],
         )
+
+
+def _batch_config_from_manifest(experiment: ExperimentManifest) -> BatchConfig:
+    return BatchConfig(
+        n_steps=experiment.batch_config.n_steps,
+        batch_size=experiment.batch_config.batch_size,
+        n_mc_paths=experiment.batch_config.n_mc_paths,
+        learning_rate=experiment.batch_config.learning_rate,
+    )
+
+
+def _batch_config_from_flags(
+    n_steps: int,
+    batch_size: int,
+    n_mc_paths: int,
+    learning_rate: float,
+) -> BatchConfig:
+    return BatchConfig(
+        n_steps=n_steps,
+        batch_size=batch_size,
+        n_mc_paths=n_mc_paths,
+        learning_rate=learning_rate,
+    )
 
 
 @app.callback()
@@ -125,12 +148,7 @@ def run_batch_command(
             scenario_count=len(scenarios),
             hash=experiment_manifest_hash,
         )
-        config = BatchConfig(
-            n_steps=experiment.batch_config.n_steps,
-            batch_size=experiment.batch_config.batch_size,
-            n_mc_paths=experiment.batch_config.n_mc_paths,
-            learning_rate=experiment.batch_config.learning_rate,
-        )
+        config = _batch_config_from_manifest(experiment)
         client = FKPinnClient(base_url=experiment.backend_url)
         effective_poll_seconds = experiment.batch_config.poll_seconds
         effective_max_wait_seconds = experiment.batch_config.max_wait_seconds
@@ -145,7 +163,7 @@ def run_batch_command(
             correlations=_parse_float_list(correlations),
             option_types=_parse_str_list(option_types),
         )
-        config = BatchConfig(
+        config = _batch_config_from_flags(
             n_steps=n_steps,
             batch_size=batch_size,
             n_mc_paths=n_mc_paths,
