@@ -12,6 +12,8 @@ __all__ = [
     "validate_scalar_correlations",
 ]
 
+_BASKET_OPTION_TYPES = {"basket", "basket_call", "basket_put"}
+
 
 def is_positive_semidefinite(matrix: list[list[float]], tol: float = 1e-10) -> bool:
     n = len(matrix)
@@ -95,11 +97,11 @@ def validate_volatility_range(
 
 def validate_dimension_option_compatibility(dim: int, option_type: str) -> list[str]:
     normalized = option_type.strip().lower()
-    basket_like = {"basket", "basket_call", "basket_put"}
-    if normalized in basket_like and dim < 2:
+    if normalized in _BASKET_OPTION_TYPES and dim < 2:
         return [
             f"Option type '{option_type}' requires dim >= 2, got dim={dim}.",
         ]
+    # Unknown option types are allowed so backend-specific options can pass through.
     return []
 
 
