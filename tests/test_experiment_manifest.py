@@ -135,3 +135,20 @@ def test_content_hash_ignores_yaml_formatting(tmp_path: Path) -> None:
     spaced_manifest = load_manifest(spaced_path)
 
     assert content_hash(compact_manifest) == content_hash(spaced_manifest)
+
+
+def test_model_sweep_config() -> None:
+    payload = _minimal_manifest_dict()
+    payload["model_sweep"] = {
+        "architectures": ["default", "resmlp"],
+        "hidden_sizes": [[64, 64], [128, 128]],
+        "activations": ["tanh", "gelu"],
+        "optimizers": ["adam", "adamw"],
+    }
+
+    manifest = ExperimentManifest.model_validate(payload)
+
+    assert manifest.model_sweep.architectures == ["default", "resmlp"]
+    assert manifest.model_sweep.hidden_sizes == [[64, 64], [128, 128]]
+    assert manifest.model_sweep.activations == ["tanh", "gelu"]
+    assert manifest.model_sweep.optimizers == ["adam", "adamw"]
