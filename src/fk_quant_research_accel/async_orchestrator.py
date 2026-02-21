@@ -158,16 +158,33 @@ async def _submit_and_poll_scenario(
     max_wait_seconds: float,
     max_retries: int,
 ) -> dict[str, Any]:
-    del (
-        client,
-        store,
-        artifact_store,
-        scenario,
+    simulation_response, submit_attempts = await _retry_call(
+        lambda: client.create_simulation(
+            problem_id="black_scholes",
+            parameters=scenario.as_parameters(),
+            training_config=batch_config.to_payload(),
+        ),
+        max_retries=max_retries,
+    )
+    simulation_id = str(simulation_response.get("id", ""))
+    await _run_store(
+        store.update_scenario_status,
         scenario_run_id,
-        scenario_dir,
-        batch_config,
+        ScenarioStatus.SUBMITTED.value,
+        simulation_id,
+        _now_iso(),
+    )
+    await _run_store(
+        store.update_scenario_retry_count,
+        scenario_run_id,
+        max(0, submit_attempts - 1),
+    )
+
+    _ = (
+        artifact_store,
         poll_seconds,
         max_wait_seconds,
-        max_retries,
+        scenario_dir,
+        simulation_id,
     )
     raise NotImplementedError
