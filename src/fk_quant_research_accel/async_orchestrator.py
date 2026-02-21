@@ -83,3 +83,17 @@ def _build_failure_record(
 
 async def _run_store(call: Callable[..., T], *args: Any, **kwargs: Any) -> T:
     return await anyio.to_thread.run_sync(partial(call, *args, **kwargs))
+
+
+async def _fetch_checkpoint(
+    simulation_id: str,
+    result_item: dict[str, Any],
+    scenario_dir: Path,
+    artifact_store: ArtifactStore,
+) -> Path | None:
+    checkpoint_dir = scenario_dir / "checkpoint"
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = checkpoint_dir / "model_checkpoint.pt"
+    log = structlog.get_logger().bind(simulation_id=simulation_id)
+    _ = (result_item, artifact_store, checkpoint_path, log)
+    return None
