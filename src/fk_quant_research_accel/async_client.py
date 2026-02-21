@@ -52,3 +52,13 @@ class AsyncFKPinnClient:
             "training_config": training_config,
         }
         return await self._post("/api/v1/simulations", payload)
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
+
+    async def __aenter__(self) -> AsyncFKPinnClient:
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        del exc_type, exc, tb
+        await self.aclose()
