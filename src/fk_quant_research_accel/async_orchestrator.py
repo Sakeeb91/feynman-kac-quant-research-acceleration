@@ -350,17 +350,56 @@ async def run_batch_async(
     seed: int | None = None,
     experiment_manifest_hash: str | None = None,
 ) -> list[dict[str, Any]]:
-    del (
-        client,
-        scenarios,
-        batch_config,
-        poll_seconds,
-        max_wait_seconds,
-        concurrency_limit,
-        max_retries,
-        artifacts_dir,
-        db_path,
-        seed,
-        experiment_manifest_hash,
-    )
-    raise NotImplementedError
+    batch_run_id = str(generate_batch_run_id())
+    log = structlog.get_logger().bind(batch_run_id=batch_run_id)
+    artifact_store = ArtifactStore(artifacts_dir)
+    batch_dir = artifact_store.create_batch_dir(batch_run_id)
+    effective_db_path = Path(db_path) if db_path is not None else artifact_store.root / "experiments.db"
+    store: MetadataStore | None = None
+    try:
+        store = MetadataStore(effective_db_path)
+        git_sha, git_dirty = capture_git_info()
+        environment = capture_environment()
+        manifest = RunManifest(
+            batch_run_id=batch_run_id,
+            created_at=datetime.now(timezone.utc),
+            reproducibility=ReproducibilityInfo(
+                git_sha=git_sha,
+                git_dirty=git_dirty,
+                python_version=environment["python_version"],
+                os_info=environment["os_info"],
+                seed=seed,
+                packages=environment["packages"],
+            ),
+            batch_config=batch_config.to_payload(),
+            scenarios=[scenario.as_parameters() for scenario in scenarios],
+            backend_url=client.base_url,
+            experiment_manifest_hash=experiment_manifest_hash,
+        )
+        manifest_path = write_manifest(manifest, artifact_store.root)
+        await _run_store(
+            store.create_batch_run,
+            batch_run_id,
+            manifest.created_at.isoformat(),
+            json.dumps(batch_config.to_payload(), sort_keys=True),
+            manifest.schema_versions.manifest_schema_version,
+            git_sha,
+            git_dirty,
+            environment["python_version"],
+            environment["os_info"],
+            seed,
+            len(scenarios),
+            str(batch_dir),
+            concurrency_limit,
+        )
+        log.info(
+            "batch_started",
+            scenario_count=len(scenarios),
+            artifact_dir=str(batch_dir),
+            manifest_path=str(manifest_path),
+        )
+        _ = (poll_seconds, max_wait_seconds, max_retries)
+        raise NotImplementedError
+    finally:
+        if store is not None:
+            await _run_store(store.close)
