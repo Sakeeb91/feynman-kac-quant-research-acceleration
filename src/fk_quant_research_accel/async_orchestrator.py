@@ -481,8 +481,30 @@ async def resume_batch_async(
             scenario_dir.mkdir(parents=True, exist_ok=True)
             execution_items.append((scenario, scenario_run_id, scenario_dir))
 
-        _ = (batch_config, execution_items, concurrency_limit, max_retries, poll_seconds, max_wait_seconds, client)
-        raise NotImplementedError
+        async with client:
+            records = await _execute_scenarios_concurrent(
+                client=client,
+                store=store,
+                artifact_store=artifact_store,
+                batch_config=batch_config,
+                execution_items=execution_items,
+                poll_seconds=poll_seconds,
+                max_wait_seconds=max_wait_seconds,
+                concurrency_limit=concurrency_limit,
+                max_retries=max_retries,
+            )
+
+        await _run_store(store.update_batch_status, batch_run_id, "completed")
+        completed_count = sum(1 for row in records if row["status"] == ScenarioStatus.COMPLETED.value)
+        failed_count = len(records) - completed_count
+        log.info(
+            "resume_completed",
+            resumed=len(records),
+            completed=completed_count,
+            failed=failed_count,
+            force=force,
+        )
+        return sorted(records, key=lambda row: row["score"])
     finally:
         if store is not None:
             await _run_store(store.close)
