@@ -335,3 +335,32 @@ async def _execute_scenarios_concurrent(
                 results=results,
             )
     return results
+
+
+async def run_batch_async(
+    client: AsyncFKPinnClient,
+    scenarios: list[Scenario],
+    batch_config: BatchConfig,
+    poll_seconds: float = 2.0,
+    max_wait_seconds: float = 1800.0,
+    concurrency_limit: int = 20,
+    max_retries: int = 3,
+    artifacts_dir: str | Path = "artifacts",
+    db_path: str | Path | None = None,
+    seed: int | None = None,
+    experiment_manifest_hash: str | None = None,
+) -> list[dict[str, Any]]:
+    del (
+        client,
+        scenarios,
+        batch_config,
+        poll_seconds,
+        max_wait_seconds,
+        concurrency_limit,
+        max_retries,
+        artifacts_dir,
+        db_path,
+        seed,
+        experiment_manifest_hash,
+    )
+    raise NotImplementedError
