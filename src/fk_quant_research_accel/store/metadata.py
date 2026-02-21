@@ -98,6 +98,17 @@ class MetadataStore:
         ).fetchall()
         return [dict(row) for row in rows]
 
+    def get_incomplete_scenario_runs(self, batch_run_id: str) -> list[dict[str, Any]]:
+        rows = self.connection.execute(
+            """
+            SELECT * FROM scenario_runs
+            WHERE batch_run_id = ?
+              AND status NOT IN ('completed', 'failed', 'cancelled')
+            """,
+            (batch_run_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
     def update_scenario_status(
         self,
         scenario_run_id: str,
