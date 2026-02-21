@@ -124,13 +124,14 @@ async def _retry_call(
     max_retries: int,
 ) -> tuple[T, int]:
     attempts = 0
+    max_attempts = max(1, max_retries)
     retrying = AsyncRetrying(
         wait=wait_exponential_jitter(
             initial=float(RETRY_DEFAULTS["initial_wait"]),
             max=float(RETRY_DEFAULTS["max_wait"]),
             jitter=float(RETRY_DEFAULTS["jitter"]),
         ),
-        stop=stop_after_attempt(max_retries),
+        stop=stop_after_attempt(max_attempts),
         retry=lambda retry_state: (
             retry_state.outcome is not None
             and retry_state.outcome.failed
@@ -320,19 +321,21 @@ async def _execute_scenarios_concurrent(
     async with create_task_group() as task_group:
         for scenario, scenario_run_id, scenario_dir in execution_items:
             task_group.start_soon(
-                _execute_scenario_safe,
-                client=client,
-                store=store,
-                artifact_store=artifact_store,
-                scenario=scenario,
-                scenario_run_id=scenario_run_id,
-                scenario_dir=scenario_dir,
-                batch_config=batch_config,
-                poll_seconds=poll_seconds,
-                max_wait_seconds=max_wait_seconds,
-                limiter=limiter,
-                max_retries=max_retries,
-                results=results,
+                partial(
+                    _execute_scenario_safe,
+                    client=client,
+                    store=store,
+                    artifact_store=artifact_store,
+                    scenario=scenario,
+                    scenario_run_id=scenario_run_id,
+                    scenario_dir=scenario_dir,
+                    batch_config=batch_config,
+                    poll_seconds=poll_seconds,
+                    max_wait_seconds=max_wait_seconds,
+                    limiter=limiter,
+                    max_retries=max_retries,
+                    results=results,
+                )
             )
     return results
 
