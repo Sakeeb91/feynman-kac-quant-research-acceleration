@@ -50,12 +50,13 @@ Plans:
   3. Manifests support model/architecture sweeps as a first-class axis alongside PDE parameter sweeps
   4. All run results conform to a structured schema with required fields (status, train_loss, grad_norm, runtime_seconds, error_stats, rank_score); malformed results are rejected with clear errors
   5. Manifests with invalid parameter combinations (non-positive-definite correlation matrices, out-of-range volatilities, dimension-incompatible option types) are rejected at pre-flight with clear error messages before any simulation is submitted
-**Plans**: 3 plans
+**Plans**: 4 plans (3 original + 1 gap closure)
 
 Plans:
 - [x] 02-01-PLAN.md -- ExperimentManifest schema, content hashing, and strict result schemas (TDD)
 - [x] 02-02-PLAN.md -- Domain-specific pre-flight validation (PSD, ranges, compatibility) (TDD)
 - [x] 02-03-PLAN.md -- CLI --manifest option, scenario generation from manifest, orchestrator wiring
+- [x] 02-04-PLAN.md -- Gap closure: basket OptionType enum + preflight test validation path
 
 ### Phase 3: Concurrent Durable Execution
 **Goal**: A 50-200 scenario batch runs concurrently, survives crashes and transient errors, and completes unattended without manual intervention
@@ -133,7 +134,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Durable Storage Foundation | 3/3 | Executed (UAT in progress) | 2026-02-19 |
-| 2. YAML Manifests, Validation, and Domain Models | 3/3 | Complete | 2026-02-20 |
+| 2. YAML Manifests, Validation, and Domain Models | 4/4 | Complete (gaps closed) | 2026-02-21 |
 | 3. Concurrent Durable Execution | 0/2 | Not started | - |
 | 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Not started | - |
 | 5. Run Analysis CLI | 0/1 | Not started | - |
@@ -142,4 +143,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 ---
 *Roadmap created: 2026-02-19*
-*Last updated: 2026-02-20 (Executed 02-03-PLAN.md; Phase 2 complete at 3/3)*
+*Last updated: 2026-02-21 (Gap closure 02-04-PLAN.md executed; Phase 2 complete at 4/4, all gaps closed)*
