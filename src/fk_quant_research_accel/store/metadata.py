@@ -42,8 +42,9 @@ class MetadataStore:
                 os_info,
                 seed,
                 scenario_count,
-                artifact_path
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                artifact_path,
+                concurrency_limit
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 batch_run_id,
