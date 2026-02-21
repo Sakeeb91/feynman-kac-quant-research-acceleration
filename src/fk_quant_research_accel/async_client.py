@@ -30,3 +30,12 @@ class AsyncFKPinnClient:
         response = await self._client.post(path, json=payload)
         response.raise_for_status()
         return response.json()
+
+    async def list_problems(self) -> dict[str, Any]:
+        return await self._get("/api/v1/problems")
+
+    async def get_simulation(self, simulation_id: str) -> dict[str, Any]:
+        return await self._get(f"/api/v1/simulations/{simulation_id}")
+
+    async def get_result(self, simulation_id: str) -> dict[str, Any]:
+        return await self._get(f"/api/v1/results/{simulation_id}")
