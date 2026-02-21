@@ -19,7 +19,7 @@ def test_init_db_enables_wal_and_user_version(tmp_path) -> None:
         conn.close()
 
     assert str(journal_mode).lower() == "wal"
-    assert user_version == 1
+    assert user_version == 2
 
 
 def test_init_db_is_idempotent(tmp_path) -> None:
