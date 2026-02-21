@@ -36,6 +36,23 @@ def test_init_db_is_idempotent(tmp_path) -> None:
     assert user_version == 2
 
 
+def test_init_db_v2_adds_phase3_columns(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    conn = init_db(db_path)
+    try:
+        scenario_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(scenario_runs)").fetchall()
+        }
+        batch_columns = {row[1] for row in conn.execute("PRAGMA table_info(batch_runs)").fetchall()}
+    finally:
+        conn.close()
+
+    assert "retry_count" in scenario_columns
+    assert "max_retries" in scenario_columns
+    assert "concurrency_limit" in batch_columns
+    assert "interrupted_at" in batch_columns
+
+
 def test_metadata_store_batch_roundtrip(tmp_path) -> None:
     db_path = tmp_path / "experiments.db"
     store = MetadataStore(db_path)
