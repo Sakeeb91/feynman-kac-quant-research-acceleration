@@ -460,7 +460,28 @@ async def resume_batch_async(
         if batch_row is None:
             raise ValueError(f"Batch run '{batch_run_id}' not found")
 
-        _ = (log, force, concurrency_limit, max_retries, poll_seconds, max_wait_seconds, client)
+        if force:
+            scenario_rows = await _run_store(store.get_scenario_runs, batch_run_id)
+        else:
+            scenario_rows = await _run_store(store.get_incomplete_scenario_runs, batch_run_id)
+        if not scenario_rows:
+            log.info("resume_no_work")
+            return []
+
+        config_json = str(batch_row.get("config_json", "{}"))
+        config_payload = json.loads(config_json)
+        batch_config = BatchConfig(**config_payload)
+
+        execution_items: list[tuple[Scenario, str, Path]] = []
+        for row in scenario_rows:
+            scenario_run_id = str(row["scenario_run_id"])
+            scenario_payload = json.loads(str(row["scenario_json"]))
+            scenario = Scenario(**scenario_payload)
+            scenario_dir = artifact_store.get_scenario_dir(batch_run_id, scenario_run_id)
+            scenario_dir.mkdir(parents=True, exist_ok=True)
+            execution_items.append((scenario, scenario_run_id, scenario_dir))
+
+        _ = (batch_config, execution_items, concurrency_limit, max_retries, poll_seconds, max_wait_seconds, client)
         raise NotImplementedError
     finally:
         if store is not None:
