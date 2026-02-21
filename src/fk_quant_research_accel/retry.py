@@ -17,5 +17,7 @@ RETRY_DEFAULTS: dict[str, Any] = {
 
 def is_retryable_error(exc: BaseException) -> bool:
     """Return whether an exception should trigger a retry."""
-    del exc
-    return False
+    return isinstance(
+        exc,
+        (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError),
+    )
