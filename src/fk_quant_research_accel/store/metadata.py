@@ -58,6 +58,7 @@ class MetadataStore:
                 seed,
                 scenario_count,
                 artifact_path,
+                concurrency_limit,
             ),
         )
         self.connection.commit()
