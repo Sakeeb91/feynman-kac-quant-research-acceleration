@@ -56,3 +56,26 @@ def _now_iso() -> str:
 
 def _known_statuses() -> set[str]:
     return {status.value for status in ScenarioStatus}
+
+
+def _build_failure_record(
+    scenario: Scenario,
+    simulation_id: str,
+    error_message: str,
+) -> dict[str, Any]:
+    return {
+        "simulation_id": simulation_id,
+        "status": ScenarioStatus.FAILED.value,
+        "dim": scenario.dim,
+        "volatility": scenario.volatility,
+        "correlation": scenario.correlation,
+        "option_type": scenario.option_type,
+        "progress": 0.0,
+        "train_loss": None,
+        "val_loss": None,
+        "lr": None,
+        "grad_norm": None,
+        "score": float("inf"),
+        "error_message": error_message,
+        "checkpoint_path": None,
+    }
