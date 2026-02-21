@@ -79,3 +79,7 @@ def _build_failure_record(
         "error_message": error_message,
         "checkpoint_path": None,
     }
+
+
+async def _run_store(call: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+    return await anyio.to_thread.run_sync(partial(call, *args, **kwargs))
