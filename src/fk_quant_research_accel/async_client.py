@@ -13,7 +13,13 @@ class AsyncFKPinnClient:
         self.timeout = timeout
         self.concurrency_limit = concurrency_limit
 
-        self._client = httpx.AsyncClient(base_url=self.base_url)
+        client_timeout = httpx.Timeout(connect=10.0, read=timeout, write=10.0, pool=5.0)
+        limits = httpx.Limits(
+            max_connections=concurrency_limit + 5,
+            max_keepalive_connections=concurrency_limit,
+            keepalive_expiry=30.0,
+        )
+        self._client = httpx.AsyncClient(base_url=self.base_url, timeout=client_timeout, limits=limits)
 
     async def _get(self, path: str) -> dict[str, Any]:
         response = await self._client.get(path)
