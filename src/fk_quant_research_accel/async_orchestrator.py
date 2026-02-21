@@ -116,3 +116,30 @@ async def _fetch_checkpoint(
     except Exception as exc:  # noqa: BLE001
         log.warning("checkpoint_fetch_failed", error=str(exc))
         return None
+
+
+async def _retry_call(
+    op: Callable[[], Awaitable[T]],
+    *,
+    max_retries: int,
+) -> tuple[T, int]:
+    attempts = 0
+    retrying = AsyncRetrying(
+        wait=wait_exponential_jitter(
+            initial=float(RETRY_DEFAULTS["initial_wait"]),
+            max=float(RETRY_DEFAULTS["max_wait"]),
+            jitter=float(RETRY_DEFAULTS["jitter"]),
+        ),
+        stop=stop_after_attempt(max_retries),
+        retry=lambda retry_state: (
+            retry_state.outcome is not None
+            and retry_state.outcome.failed
+            and is_retryable_error(retry_state.outcome.exception())
+        ),
+        reraise=True,
+    )
+    async for attempt in retrying:
+        with attempt:
+            attempts += 1
+            value = await op()
+    return value, attempts
