@@ -450,15 +450,18 @@ async def resume_batch_async(
     db_path: str | Path | None = None,
     artifacts_dir: str | Path = "artifacts",
 ) -> list[dict[str, Any]]:
-    del (
-        client,
-        batch_run_id,
-        concurrency_limit,
-        max_retries,
-        poll_seconds,
-        max_wait_seconds,
-        force,
-        db_path,
-        artifacts_dir,
-    )
-    raise NotImplementedError
+    log = structlog.get_logger().bind(batch_run_id=batch_run_id)
+    artifact_store = ArtifactStore(artifacts_dir)
+    effective_db_path = Path(db_path) if db_path is not None else artifact_store.root / "experiments.db"
+    store: MetadataStore | None = None
+    try:
+        store = MetadataStore(effective_db_path)
+        batch_row = await _run_store(store.get_batch_run, batch_run_id)
+        if batch_row is None:
+            raise ValueError(f"Batch run '{batch_run_id}' not found")
+
+        _ = (log, force, concurrency_limit, max_retries, poll_seconds, max_wait_seconds, client)
+        raise NotImplementedError
+    finally:
+        if store is not None:
+            await _run_store(store.close)
