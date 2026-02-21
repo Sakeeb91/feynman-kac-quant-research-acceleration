@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** A researcher can define a 50-200 scenario batch, walk away, and come back to a ranked leaderboard with full reproducibility metadata and a deployable model package for the winner.
-**Current focus:** Phase 2 complete; ready to begin Phase 3 execution planning
+**Current focus:** Phase 2 fully complete (including gap closure); ready to begin Phase 3 execution planning
 
 ## Current Position
 
 Phase: 2 of 7 (YAML Manifests, Validation, and Domain Models)
-Plan: 3 of 3 in current phase
-Status: Executed (phase complete)
-Last activity: 2026-02-20 -- Executed 02-03-PLAN.md (manifest CLI wiring + orchestrator integration)
+Plan: 4 of 4 in current phase
+Status: Executed (phase complete, gap closure done)
+Last activity: 2026-02-21 -- Executed 02-04-PLAN.md (basket OptionType enum gap closure)
 
 Progress: [█████░░░░░] 43%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: --
 - Total execution time: --
 
@@ -28,10 +28,10 @@ Progress: [█████░░░░░] 43%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1     | 3/3   | --    | --       |
-| 2     | 3/3   | --    | --       |
+| 2     | 4/4   | --    | --       |
 
 **Recent Trend:**
-- Last 5 plans: 01-02, 01-03, 02-01, 02-02, 02-03
+- Last 5 plans: 01-03, 02-01, 02-02, 02-03, 02-04
 - Trend: steady execution
 
 *Updated after each plan completion*
@@ -57,6 +57,7 @@ Recent decisions affecting current work:
 - [Phase 2 Plan 3]: `--manifest` is now the authoritative run configuration path; legacy flags remain supported for backward compatibility
 - [Phase 2 Plan 3]: Scenario generation now expands Cartesian product across both PDE grid axes and model sweep axes
 - [Phase 2 Plan 3]: Source manifest content hash is logged and persisted in run artifact manifest for reproducibility traceability
+- [Phase 2 Plan 4]: Keep model_construct for error-aggregation tests needing intentionally invalid Pydantic data; use model_validate only for pure basket-path tests
 
 ### Pending Todos
 
@@ -72,6 +73,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Completed 02-03-PLAN.md (115 tests passing, lint/type checks clean)
+Last session: 2026-02-21
+Stopped at: Completed 02-04-PLAN.md (basket OptionType gap closure, 115 tests passing)
 Resume file: .planning/ROADMAP.md
