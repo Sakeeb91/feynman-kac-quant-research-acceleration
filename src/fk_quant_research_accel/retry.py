@@ -47,3 +47,19 @@ def is_retryable_error(exc: BaseException) -> bool:
         return exc.response.status_code >= 500
 
     return False
+
+
+def make_retry_decorator(**overrides: Any) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    config = dict(RETRY_DEFAULTS)
+    config.update(overrides)
+    return retry(
+        wait=wait_exponential_jitter(
+            initial=config["initial_wait"],
+            max=config["max_wait"],
+            jitter=config["jitter"],
+        ),
+        stop=stop_after_attempt(config["max_attempts"]),
+        retry=retry_if_exception(is_retryable_error),
+        before_sleep=_before_sleep_log,
+        reraise=True,
+    )
