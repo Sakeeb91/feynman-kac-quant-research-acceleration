@@ -33,7 +33,7 @@ def test_init_db_is_idempotent(tmp_path) -> None:
     finally:
         conn2.close()
 
-    assert user_version == 1
+    assert user_version == 2
 
 
 def test_metadata_store_batch_roundtrip(tmp_path) -> None:
