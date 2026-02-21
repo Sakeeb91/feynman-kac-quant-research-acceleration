@@ -301,3 +301,37 @@ async def _execute_scenario_safe(
             await _run_store(artifact_store.atomic_write_json, scenario_dir / "result.json", record)
             log.error("scenario_failed", error=error_message, exc_info=True)
     results.append(record)
+
+
+async def _execute_scenarios_concurrent(
+    *,
+    client: AsyncFKPinnClient,
+    store: MetadataStore,
+    artifact_store: ArtifactStore,
+    batch_config: BatchConfig,
+    execution_items: list[tuple[Scenario, str, Path]],
+    poll_seconds: float,
+    max_wait_seconds: float,
+    concurrency_limit: int,
+    max_retries: int,
+) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
+    limiter = CapacityLimiter(concurrency_limit)
+    async with create_task_group() as task_group:
+        for scenario, scenario_run_id, scenario_dir in execution_items:
+            task_group.start_soon(
+                _execute_scenario_safe,
+                client=client,
+                store=store,
+                artifact_store=artifact_store,
+                scenario=scenario,
+                scenario_run_id=scenario_run_id,
+                scenario_dir=scenario_dir,
+                batch_config=batch_config,
+                poll_seconds=poll_seconds,
+                max_wait_seconds=max_wait_seconds,
+                limiter=limiter,
+                max_retries=max_retries,
+                results=results,
+            )
+    return results
