@@ -67,11 +67,12 @@ Plans:
   2. If the process crashes mid-batch, researcher can run `resume-batch` and only incomplete scenarios are retried (completed scenarios are never rerun unless `--force` is specified)
   3. Transient backend HTTP errors (timeouts, 5xx) are retried with exponential backoff up to a configurable max, without aborting the batch
   4. A 100-scenario batch achieves >=95% scenario success rate and completes without manual intervention
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md -- Dependencies, schema v2 migration, async HTTP client, and retry configuration
+- [ ] 03-02-PLAN.md -- Async orchestrator with concurrent execution, retry, fault isolation, and resume
+- [ ] 03-03-PLAN.md -- CLI wiring for async run-batch and resume-batch commands
 
 ### Phase 4: Scoring, Diagnostics, and Leaderboards
 **Goal**: Ranking reflects actual convergence quality with pluggable scoring, automated health diagnostics, and leaderboards that surface both rank and convergence health
@@ -135,7 +136,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 |-------|----------------|--------|-----------|
 | 1. Durable Storage Foundation | 3/3 | Executed (UAT in progress) | 2026-02-19 |
 | 2. YAML Manifests, Validation, and Domain Models | 4/4 | Complete (gaps closed) | 2026-02-21 |
-| 3. Concurrent Durable Execution | 0/2 | Not started | - |
+| 3. Concurrent Durable Execution | 0/3 | Planned | - |
 | 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Not started | - |
 | 5. Run Analysis CLI | 0/1 | Not started | - |
 | 6. Extensibility | 0/2 | Not started | - |
@@ -143,4 +144,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 ---
 *Roadmap created: 2026-02-19*
-*Last updated: 2026-02-21 (Gap closure 02-04-PLAN.md executed; Phase 2 complete at 4/4, all gaps closed)*
+*Last updated: 2026-02-21 (Phase 3 planned: 3 plans in 3 waves -- deps/schema, async orchestrator, CLI wiring)*
