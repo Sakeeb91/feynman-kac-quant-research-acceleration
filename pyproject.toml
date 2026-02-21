@@ -12,6 +12,7 @@ authors = [
   { name = "Sakeeb" }
 ]
 dependencies = [
+  "anyio>=4.12.1",
   "requests>=2.32.0",
   "pydantic>=2.12.5",
   "PyYAML>=6.0.3",
