@@ -196,5 +196,16 @@ class MetadataStore:
         )
         self.connection.commit()
 
+    def update_batch_interrupted(self, batch_run_id: str, interrupted_at: str) -> None:
+        self.connection.execute(
+            """
+            UPDATE batch_runs
+            SET status = 'interrupted', interrupted_at = ?
+            WHERE batch_run_id = ?
+            """,
+            (interrupted_at, batch_run_id),
+        )
+        self.connection.commit()
+
     def close(self) -> None:
         self.connection.close()
