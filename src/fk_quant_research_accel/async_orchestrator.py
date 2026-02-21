@@ -143,3 +143,31 @@ async def _retry_call(
             attempts += 1
             value = await op()
     return value, attempts
+
+
+async def _submit_and_poll_scenario(
+    *,
+    client: AsyncFKPinnClient,
+    store: MetadataStore,
+    artifact_store: ArtifactStore,
+    scenario: Scenario,
+    scenario_run_id: str,
+    scenario_dir: Path,
+    batch_config: BatchConfig,
+    poll_seconds: float,
+    max_wait_seconds: float,
+    max_retries: int,
+) -> dict[str, Any]:
+    del (
+        client,
+        store,
+        artifact_store,
+        scenario,
+        scenario_run_id,
+        scenario_dir,
+        batch_config,
+        poll_seconds,
+        max_wait_seconds,
+        max_retries,
+    )
+    raise NotImplementedError
