@@ -27,6 +27,7 @@ class MetadataStore:
         seed: int | None,
         scenario_count: int,
         artifact_path: str,
+        concurrency_limit: int = 1,
     ) -> None:
         self.connection.execute(
             """
