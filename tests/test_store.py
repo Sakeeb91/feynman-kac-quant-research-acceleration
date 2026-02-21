@@ -79,6 +79,32 @@ def test_metadata_store_batch_roundtrip(tmp_path) -> None:
     assert row["scenario_count"] == 2
 
 
+def test_metadata_store_persists_batch_concurrency_limit(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    batch_run_id = str(generate_batch_run_id())
+
+    store.create_batch_run(
+        batch_run_id=batch_run_id,
+        created_at=datetime.now(UTC).isoformat(),
+        config_json=json.dumps({"n_steps": 10}),
+        manifest_schema_version=1,
+        git_sha="abc123",
+        git_dirty=False,
+        python_version="3.12.0",
+        os_info="test-os",
+        seed=123,
+        scenario_count=2,
+        artifact_path=str(tmp_path / "artifacts" / batch_run_id),
+        concurrency_limit=8,
+    )
+    row = store.get_batch_run(batch_run_id)
+    store.close()
+
+    assert row is not None
+    assert row["concurrency_limit"] == 8
+
+
 def test_metadata_store_scenario_persist_flow(tmp_path) -> None:
     db_path = tmp_path / "experiments.db"
     store = MetadataStore(db_path)
