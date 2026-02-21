@@ -396,3 +396,56 @@ async def test_resume_batch_async_nonexistent_batch(tmp_path) -> None:
             artifacts_dir=tmp_path / "artifacts",
             db_path=tmp_path / "artifacts" / "experiments.db",
         )
+
+
+@pytest.mark.anyio
+async def test_sqlite_accessed_via_thread(tmp_path) -> None:
+    rows = await run_batch_async(
+        client=MockAsyncFKPinnClient(),
+        scenarios=_scenarios(1),
+        batch_config=BatchConfig(),
+        poll_seconds=0.0,
+        max_wait_seconds=2.0,
+        artifacts_dir=tmp_path / "artifacts",
+        db_path=tmp_path / "artifacts" / "experiments.db",
+    )
+
+    assert len(rows) == 1
+    store = MetadataStore(tmp_path / "artifacts" / "experiments.db")
+    try:
+        statuses = [row["status"] for row in store.get_scenario_runs(store.get_batch_run(store.connection.execute("SELECT batch_run_id FROM batch_runs").fetchone()[0])["batch_run_id"])]
+    finally:
+        store.close()
+    assert statuses == ["completed"]
+
+
+@pytest.mark.anyio
+async def test_result_record_format(tmp_path) -> None:
+    rows = await run_batch_async(
+        client=MockAsyncFKPinnClient(),
+        scenarios=_scenarios(1),
+        batch_config=BatchConfig(),
+        poll_seconds=0.0,
+        max_wait_seconds=2.0,
+        artifacts_dir=tmp_path / "artifacts",
+        db_path=tmp_path / "artifacts" / "experiments.db",
+    )
+
+    assert len(rows) == 1
+    expected_keys = {
+        "simulation_id",
+        "status",
+        "dim",
+        "volatility",
+        "correlation",
+        "option_type",
+        "progress",
+        "train_loss",
+        "val_loss",
+        "lr",
+        "grad_norm",
+        "score",
+        "error_message",
+        "checkpoint_path",
+    }
+    assert expected_keys.issubset(rows[0].keys())
