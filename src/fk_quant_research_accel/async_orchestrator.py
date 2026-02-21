@@ -437,3 +437,28 @@ async def run_batch_async(
     finally:
         if store is not None:
             await _run_store(store.close)
+
+
+async def resume_batch_async(
+    client: AsyncFKPinnClient,
+    batch_run_id: str,
+    concurrency_limit: int = 20,
+    max_retries: int = 3,
+    poll_seconds: float = 2.0,
+    max_wait_seconds: float = 1800.0,
+    force: bool = False,
+    db_path: str | Path | None = None,
+    artifacts_dir: str | Path = "artifacts",
+) -> list[dict[str, Any]]:
+    del (
+        client,
+        batch_run_id,
+        concurrency_limit,
+        max_retries,
+        poll_seconds,
+        max_wait_seconds,
+        force,
+        db_path,
+        artifacts_dir,
+    )
+    raise NotImplementedError
