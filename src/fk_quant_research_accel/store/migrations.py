@@ -90,3 +90,4 @@ def _migrate_v1_to_v2(conn: sqlite3.Connection) -> None:
     """Add retry and concurrency metadata columns for Phase 3."""
     conn.execute("ALTER TABLE scenario_runs ADD COLUMN retry_count INTEGER DEFAULT 0")
     conn.execute("ALTER TABLE scenario_runs ADD COLUMN max_retries INTEGER DEFAULT 3")
+    conn.execute("ALTER TABLE batch_runs ADD COLUMN concurrency_limit INTEGER DEFAULT 1")
