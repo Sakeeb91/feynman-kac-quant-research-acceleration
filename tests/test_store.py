@@ -245,6 +245,34 @@ def test_metadata_store_returns_only_incomplete_scenarios(tmp_path) -> None:
     assert observed_ids == {pending_id, submitted_id}
 
 
+def test_metadata_store_marks_batch_interrupted(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    batch_run_id = str(generate_batch_run_id())
+    interrupted_at = datetime.now(UTC).isoformat()
+
+    store.create_batch_run(
+        batch_run_id=batch_run_id,
+        created_at=datetime.now(UTC).isoformat(),
+        config_json="{}",
+        manifest_schema_version=1,
+        git_sha=None,
+        git_dirty=None,
+        python_version="3.12.0",
+        os_info="test-os",
+        seed=None,
+        scenario_count=1,
+        artifact_path=str(tmp_path / "artifacts" / batch_run_id),
+    )
+    store.update_batch_interrupted(batch_run_id, interrupted_at)
+    row = store.get_batch_run(batch_run_id)
+    store.close()
+
+    assert row is not None
+    assert row["status"] == "interrupted"
+    assert row["interrupted_at"] == interrupted_at
+
+
 def test_artifact_store_creates_batch_and_scenario_dirs(tmp_path) -> None:
     artifacts = ArtifactStore(tmp_path / "artifacts")
     batch_run_id = str(generate_batch_run_id())
