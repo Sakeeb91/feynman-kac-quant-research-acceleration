@@ -39,3 +39,16 @@ class AsyncFKPinnClient:
 
     async def get_result(self, simulation_id: str) -> dict[str, Any]:
         return await self._get(f"/api/v1/results/{simulation_id}")
+
+    async def create_simulation(
+        self,
+        problem_id: str,
+        parameters: dict[str, Any],
+        training_config: dict[str, Any],
+    ) -> dict[str, Any]:
+        payload = {
+            "problem_id": problem_id,
+            "parameters": parameters,
+            "training_config": training_config,
+        }
+        return await self._post("/api/v1/simulations", payload)
