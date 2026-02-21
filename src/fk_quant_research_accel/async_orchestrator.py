@@ -424,8 +424,16 @@ async def run_batch_async(
                 max_retries=max_retries,
             )
 
-        _ = records
-        raise NotImplementedError
+        await _run_store(store.update_batch_status, batch_run_id, "completed")
+        completed_count = sum(1 for row in records if row["status"] == ScenarioStatus.COMPLETED.value)
+        failed_count = len(records) - completed_count
+        log.info(
+            "batch_completed",
+            total=len(records),
+            completed=completed_count,
+            failed=failed_count,
+        )
+        return sorted(records, key=lambda row: row["score"])
     finally:
         if store is not None:
             await _run_store(store.close)
