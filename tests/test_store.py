@@ -273,6 +273,39 @@ def test_metadata_store_marks_batch_interrupted(tmp_path) -> None:
     assert row["interrupted_at"] == interrupted_at
 
 
+def test_metadata_store_updates_retry_count(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    batch_run_id = str(generate_batch_run_id())
+    scenario_run_id = str(generate_scenario_run_id())
+
+    store.create_batch_run(
+        batch_run_id=batch_run_id,
+        created_at=datetime.now(UTC).isoformat(),
+        config_json="{}",
+        manifest_schema_version=1,
+        git_sha=None,
+        git_dirty=None,
+        python_version="3.12.0",
+        os_info="test-os",
+        seed=None,
+        scenario_count=1,
+        artifact_path=str(tmp_path / "artifacts" / batch_run_id),
+    )
+    store.create_scenario_run(
+        scenario_run_id=scenario_run_id,
+        batch_run_id=batch_run_id,
+        scenario_json="{}",
+        created_at=datetime.now(UTC).isoformat(),
+    )
+    store.update_scenario_retry_count(scenario_run_id, 2)
+    scenario_rows = store.get_scenario_runs(batch_run_id)
+    store.close()
+
+    assert len(scenario_rows) == 1
+    assert scenario_rows[0]["retry_count"] == 2
+
+
 def test_artifact_store_creates_batch_and_scenario_dirs(tmp_path) -> None:
     artifacts = ArtifactStore(tmp_path / "artifacts")
     batch_run_id = str(generate_batch_run_id())
