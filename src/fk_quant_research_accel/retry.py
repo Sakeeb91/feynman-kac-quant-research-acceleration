@@ -3,8 +3,28 @@
 from __future__ import annotations
 
 from typing import Any
+from typing import Callable
+from typing import TypeVar
 
 import httpx
+import structlog
+from tenacity import RetryCallState
+from tenacity import retry
+from tenacity import retry_if_exception
+from tenacity import stop_after_attempt
+from tenacity import wait_exponential_jitter
+
+
+T = TypeVar("T")
+
+
+def _before_sleep_log(retry_state: RetryCallState) -> None:
+    exception = retry_state.outcome.exception() if retry_state.outcome is not None else None
+    structlog.get_logger().warning(
+        "retrying_request",
+        attempt=retry_state.attempt_number,
+        error=str(exception) if exception is not None else None,
+    )
 
 
 RETRY_DEFAULTS: dict[str, Any] = {
