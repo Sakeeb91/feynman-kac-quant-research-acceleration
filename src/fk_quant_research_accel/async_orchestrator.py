@@ -81,8 +81,16 @@ def _build_failure_record(
     }
 
 
-async def _run_store(call: Callable[..., T], *args: Any, **kwargs: Any) -> T:
-    return await anyio.to_thread.run_sync(partial(call, *args, **kwargs))
+async def _run_store(
+    call: Callable[..., T],
+    *args: Any,
+    lock: anyio.Lock | None = None,
+    **kwargs: Any,
+) -> T:
+    if lock is None:
+        return await anyio.to_thread.run_sync(partial(call, *args, **kwargs))
+    async with lock:
+        return await anyio.to_thread.run_sync(partial(call, *args, **kwargs))
 
 
 async def _fetch_checkpoint(
@@ -155,6 +163,7 @@ async def _submit_and_poll_scenario(
     scenario_run_id: str,
     scenario_dir: Path,
     batch_config: BatchConfig,
+    store_lock: anyio.Lock,
     poll_seconds: float,
     max_wait_seconds: float,
     max_retries: int,
@@ -174,11 +183,13 @@ async def _submit_and_poll_scenario(
         ScenarioStatus.SUBMITTED.value,
         simulation_id,
         _now_iso(),
+        lock=store_lock,
     )
     await _run_store(
         store.update_scenario_retry_count,
         scenario_run_id,
         max(0, submit_attempts - 1),
+        lock=store_lock,
     )
     retry_count = max(0, submit_attempts - 1)
     deadline = time.monotonic() + max_wait_seconds
@@ -189,7 +200,12 @@ async def _submit_and_poll_scenario(
             max_retries=max_retries,
         )
         retry_count = max(retry_count, poll_attempts - 1)
-        await _run_store(store.update_scenario_retry_count, scenario_run_id, retry_count)
+        await _run_store(
+            store.update_scenario_retry_count,
+            scenario_run_id,
+            retry_count,
+            lock=store_lock,
+        )
         status = str(latest_simulation.get("status", ScenarioStatus.RUNNING.value))
         if status in TERMINAL_STATUSES:
             break
@@ -205,7 +221,12 @@ async def _submit_and_poll_scenario(
         max_retries=max_retries,
     )
     retry_count = max(retry_count, result_attempts - 1)
-    await _run_store(store.update_scenario_retry_count, scenario_run_id, retry_count)
+    await _run_store(
+        store.update_scenario_retry_count,
+        scenario_run_id,
+        retry_count,
+        lock=store_lock,
+    )
 
     result_item = result_envelope.get("item") or {}
     metrics = result_item.get("metrics") or {}
@@ -249,6 +270,7 @@ async def _submit_and_poll_scenario(
         record["error_message"],
         completed_at,
         record["checkpoint_path"],
+        lock=store_lock,
     )
     await _run_store(artifact_store.atomic_write_json, scenario_dir / "result.json", record)
     return record
@@ -263,6 +285,7 @@ async def _execute_scenario_safe(
     scenario_run_id: str,
     scenario_dir: Path,
     batch_config: BatchConfig,
+    store_lock: anyio.Lock,
     poll_seconds: float,
     max_wait_seconds: float,
     limiter: CapacityLimiter,
@@ -281,6 +304,7 @@ async def _execute_scenario_safe(
                 scenario_run_id=scenario_run_id,
                 scenario_dir=scenario_dir,
                 batch_config=batch_config,
+                store_lock=store_lock,
                 poll_seconds=poll_seconds,
                 max_wait_seconds=max_wait_seconds,
                 max_retries=max_retries,
@@ -298,6 +322,7 @@ async def _execute_scenario_safe(
                 error_message,
                 _now_iso(),
                 None,
+                lock=store_lock,
             )
             await _run_store(artifact_store.atomic_write_json, scenario_dir / "result.json", record)
             log.error("scenario_failed", error=error_message, exc_info=True)
@@ -311,6 +336,7 @@ async def _execute_scenarios_concurrent(
     artifact_store: ArtifactStore,
     batch_config: BatchConfig,
     execution_items: list[tuple[Scenario, str, Path]],
+    store_lock: anyio.Lock,
     poll_seconds: float,
     max_wait_seconds: float,
     concurrency_limit: int,
@@ -330,6 +356,7 @@ async def _execute_scenarios_concurrent(
                     scenario_run_id=scenario_run_id,
                     scenario_dir=scenario_dir,
                     batch_config=batch_config,
+                    store_lock=store_lock,
                     poll_seconds=poll_seconds,
                     max_wait_seconds=max_wait_seconds,
                     limiter=limiter,
@@ -359,6 +386,7 @@ async def run_batch_async(
     batch_dir = artifact_store.create_batch_dir(batch_run_id)
     effective_db_path = Path(db_path) if db_path is not None else artifact_store.root / "experiments.db"
     store: MetadataStore | None = None
+    store_lock = anyio.Lock()
     try:
         store = MetadataStore(effective_db_path)
         git_sha, git_dirty = capture_git_info()
@@ -394,6 +422,7 @@ async def run_batch_async(
             len(scenarios),
             str(batch_dir),
             concurrency_limit,
+            lock=store_lock,
         )
         log.info(
             "batch_started",
@@ -411,6 +440,7 @@ async def run_batch_async(
                 batch_run_id,
                 json.dumps(scenario.as_parameters(), sort_keys=True),
                 _now_iso(),
+                lock=store_lock,
             )
             execution_items.append((scenario, scenario_run_id, scenario_dir))
 
@@ -421,13 +451,14 @@ async def run_batch_async(
                 artifact_store=artifact_store,
                 batch_config=batch_config,
                 execution_items=execution_items,
+                store_lock=store_lock,
                 poll_seconds=poll_seconds,
                 max_wait_seconds=max_wait_seconds,
                 concurrency_limit=concurrency_limit,
                 max_retries=max_retries,
             )
 
-        await _run_store(store.update_batch_status, batch_run_id, "completed")
+        await _run_store(store.update_batch_status, batch_run_id, "completed", lock=store_lock)
         completed_count = sum(1 for row in records if row["status"] == ScenarioStatus.COMPLETED.value)
         failed_count = len(records) - completed_count
         log.info(
@@ -439,7 +470,7 @@ async def run_batch_async(
         return sorted(records, key=lambda row: row["score"])
     finally:
         if store is not None:
-            await _run_store(store.close)
+            await _run_store(store.close, lock=store_lock)
 
 
 async def resume_batch_async(
@@ -457,16 +488,21 @@ async def resume_batch_async(
     artifact_store = ArtifactStore(artifacts_dir)
     effective_db_path = Path(db_path) if db_path is not None else artifact_store.root / "experiments.db"
     store: MetadataStore | None = None
+    store_lock = anyio.Lock()
     try:
         store = MetadataStore(effective_db_path)
-        batch_row = await _run_store(store.get_batch_run, batch_run_id)
+        batch_row = await _run_store(store.get_batch_run, batch_run_id, lock=store_lock)
         if batch_row is None:
             raise ValueError(f"Batch run '{batch_run_id}' not found")
 
         if force:
-            scenario_rows = await _run_store(store.get_scenario_runs, batch_run_id)
+            scenario_rows = await _run_store(store.get_scenario_runs, batch_run_id, lock=store_lock)
         else:
-            scenario_rows = await _run_store(store.get_incomplete_scenario_runs, batch_run_id)
+            scenario_rows = await _run_store(
+                store.get_incomplete_scenario_runs,
+                batch_run_id,
+                lock=store_lock,
+            )
         if not scenario_rows:
             log.info("resume_no_work")
             return []
@@ -491,13 +527,14 @@ async def resume_batch_async(
                 artifact_store=artifact_store,
                 batch_config=batch_config,
                 execution_items=execution_items,
+                store_lock=store_lock,
                 poll_seconds=poll_seconds,
                 max_wait_seconds=max_wait_seconds,
                 concurrency_limit=concurrency_limit,
                 max_retries=max_retries,
             )
 
-        await _run_store(store.update_batch_status, batch_run_id, "completed")
+        await _run_store(store.update_batch_status, batch_run_id, "completed", lock=store_lock)
         completed_count = sum(1 for row in records if row["status"] == ScenarioStatus.COMPLETED.value)
         failed_count = len(records) - completed_count
         log.info(
@@ -510,4 +547,4 @@ async def resume_batch_async(
         return sorted(records, key=lambda row: row["score"])
     finally:
         if store is not None:
-            await _run_store(store.close)
+            await _run_store(store.close, lock=store_lock)
