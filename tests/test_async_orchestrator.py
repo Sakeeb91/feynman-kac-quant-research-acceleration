@@ -111,3 +111,39 @@ def _setup_batch_with_statuses(
             )
     store.close()
     return batch_run_id, scenario_run_ids, scenarios
+
+
+@pytest.mark.anyio
+async def test_run_batch_async_basic(tmp_path) -> None:
+    client = MockAsyncFKPinnClient()
+    artifacts_dir = tmp_path / "artifacts"
+    db_path = artifacts_dir / "experiments.db"
+
+    rows = await run_batch_async(
+        client=client,
+        scenarios=_scenarios(3),
+        batch_config=BatchConfig(),
+        poll_seconds=0.0,
+        max_wait_seconds=2.0,
+        concurrency_limit=2,
+        max_retries=3,
+        artifacts_dir=artifacts_dir,
+        db_path=db_path,
+    )
+
+    assert len(rows) == 3
+    assert all(row["status"] == "completed" for row in rows)
+    scores = [row["score"] for row in rows]
+    assert scores == sorted(scores)
+
+    store = MetadataStore(db_path)
+    try:
+        batch_rows = store.connection.execute("SELECT status FROM batch_runs").fetchall()
+        scenario_rows = store.connection.execute("SELECT status FROM scenario_runs").fetchall()
+    finally:
+        store.close()
+
+    assert len(batch_rows) == 1
+    assert batch_rows[0][0] == "completed"
+    assert len(scenario_rows) == 3
+    assert {row[0] for row in scenario_rows} == {"completed"}
