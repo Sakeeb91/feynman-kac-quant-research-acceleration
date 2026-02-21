@@ -199,5 +199,35 @@ async def _submit_and_poll_scenario(
             f"Simulation {simulation_id} did not finish within {max_wait_seconds} seconds"
         )
 
-    _ = (artifact_store, scenario_dir, latest_simulation)
+    result_envelope, result_attempts = await _retry_call(
+        lambda: client.get_result(simulation_id),
+        max_retries=max_retries,
+    )
+    retry_count = max(retry_count, result_attempts - 1)
+    await _run_store(store.update_scenario_retry_count, scenario_run_id, retry_count)
+
+    result_item = result_envelope.get("item") or {}
+    metrics = result_item.get("metrics") or {}
+    status = str(latest_simulation.get("status", ScenarioStatus.COMPLETED.value))
+    if status not in _known_statuses():
+        status = ScenarioStatus.COMPLETED.value
+
+    record = {
+        "simulation_id": simulation_id,
+        "status": status,
+        "dim": scenario.dim,
+        "volatility": scenario.volatility,
+        "correlation": scenario.correlation,
+        "option_type": scenario.option_type,
+        "progress": result_item.get("progress", 0.0),
+        "train_loss": metrics.get("loss", metrics.get("train_loss")),
+        "val_loss": metrics.get("val_loss"),
+        "lr": metrics.get("lr"),
+        "grad_norm": metrics.get("grad_norm"),
+        "error_message": result_item.get("error"),
+        "checkpoint_path": None,
+    }
+    record["score"] = compute_score(record)
+
+    _ = (artifact_store, scenario_dir, result_item)
     raise NotImplementedError
