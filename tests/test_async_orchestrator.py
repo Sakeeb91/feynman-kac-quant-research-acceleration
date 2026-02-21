@@ -231,3 +231,71 @@ async def test_single_failure_does_not_cancel_siblings(tmp_path) -> None:
         store.close()
     assert len(persisted) == 3
     assert {row["status"] for row in persisted} == {"completed", "failed"}
+
+
+@pytest.mark.anyio
+async def test_transient_error_retried(tmp_path) -> None:
+    class TransientPollingClient(MockAsyncFKPinnClient):
+        def __init__(self) -> None:
+            super().__init__()
+            self.poll_calls = 0
+
+        async def get_simulation(self, simulation_id: str) -> dict[str, Any]:
+            del simulation_id
+            self.poll_calls += 1
+            if self.poll_calls == 1:
+                raise httpx.TimeoutException("first timeout")
+            return {"status": "completed"}
+
+    client = TransientPollingClient()
+    rows = await run_batch_async(
+        client=client,
+        scenarios=_scenarios(1),
+        batch_config=BatchConfig(),
+        poll_seconds=0.0,
+        max_wait_seconds=2.0,
+        max_retries=3,
+        artifacts_dir=tmp_path / "artifacts",
+        db_path=tmp_path / "artifacts" / "experiments.db",
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["status"] == "completed"
+    assert client.poll_calls >= 2
+
+
+@pytest.mark.anyio
+async def test_non_retryable_error_fails_immediately(tmp_path) -> None:
+    class BadRequestClient(MockAsyncFKPinnClient):
+        def __init__(self) -> None:
+            super().__init__()
+            self.create_calls = 0
+
+        async def create_simulation(
+            self,
+            problem_id: str,
+            parameters: dict[str, Any],
+            training_config: dict[str, Any],
+        ) -> dict[str, Any]:
+            del problem_id, parameters, training_config
+            self.create_calls += 1
+            request = httpx.Request("POST", "http://mock-backend:8000/api/v1/simulations")
+            response = httpx.Response(400, request=request)
+            raise httpx.HTTPStatusError("bad request", request=request, response=response)
+
+    client = BadRequestClient()
+    rows = await run_batch_async(
+        client=client,
+        scenarios=_scenarios(1),
+        batch_config=BatchConfig(),
+        poll_seconds=0.0,
+        max_wait_seconds=2.0,
+        max_retries=3,
+        artifacts_dir=tmp_path / "artifacts",
+        db_path=tmp_path / "artifacts" / "experiments.db",
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["status"] == "failed"
+    assert "bad request" in str(rows[0]["error_message"])
+    assert client.create_calls == 1
