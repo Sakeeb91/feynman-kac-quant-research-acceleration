@@ -179,12 +179,25 @@ async def _submit_and_poll_scenario(
         scenario_run_id,
         max(0, submit_attempts - 1),
     )
+    retry_count = max(0, submit_attempts - 1)
+    deadline = time.monotonic() + max_wait_seconds
+    latest_simulation: dict[str, Any] = {}
+    while time.monotonic() < deadline:
+        latest_simulation, poll_attempts = await _retry_call(
+            lambda: client.get_simulation(simulation_id),
+            max_retries=max_retries,
+        )
+        retry_count = max(retry_count, poll_attempts - 1)
+        await _run_store(store.update_scenario_retry_count, scenario_run_id, retry_count)
+        status = str(latest_simulation.get("status", ScenarioStatus.RUNNING.value))
+        if status in TERMINAL_STATUSES:
+            break
+        jitter = random.uniform(0.0, poll_seconds * 0.3) if poll_seconds > 0 else 0.0
+        await anyio.sleep(poll_seconds + jitter)
+    else:
+        raise TimeoutError(
+            f"Simulation {simulation_id} did not finish within {max_wait_seconds} seconds"
+        )
 
-    _ = (
-        artifact_store,
-        poll_seconds,
-        max_wait_seconds,
-        scenario_dir,
-        simulation_id,
-    )
+    _ = (artifact_store, scenario_dir, latest_simulation)
     raise NotImplementedError
