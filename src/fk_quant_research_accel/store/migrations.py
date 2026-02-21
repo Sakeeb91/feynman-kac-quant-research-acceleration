@@ -84,3 +84,7 @@ def _migrate_v0_to_v1(conn: sqlite3.Connection) -> None:
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_scenario_status ON scenario_runs(status)"
     )
+
+
+def _migrate_v1_to_v2(conn: sqlite3.Connection) -> None:
+    """Add retry and concurrency metadata columns for Phase 3."""
