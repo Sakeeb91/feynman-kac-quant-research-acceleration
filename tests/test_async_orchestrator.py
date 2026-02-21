@@ -347,3 +347,52 @@ async def test_resume_batch_async_only_incomplete(tmp_path) -> None:
     assert scenarios[scenario_run_ids[0]]["status"] == "completed"
     assert scenarios[scenario_run_ids[1]]["status"] == "failed"
     assert scenarios[scenario_run_ids[2]]["status"] == "completed"
+
+
+@pytest.mark.anyio
+async def test_resume_batch_async_force(tmp_path) -> None:
+    class CountingClient(MockAsyncFKPinnClient):
+        def __init__(self) -> None:
+            super().__init__()
+            self.create_calls = 0
+
+        async def create_simulation(
+            self,
+            problem_id: str,
+            parameters: dict[str, Any],
+            training_config: dict[str, Any],
+        ) -> dict[str, Any]:
+            del problem_id, parameters, training_config
+            self.create_calls += 1
+            return {"id": f"sim-force-{uuid4()}"}
+
+    artifacts_dir = tmp_path / "artifacts"
+    batch_run_id, _, _ = _setup_batch_with_statuses(
+        db_path=str(artifacts_dir / "experiments.db"),
+        artifacts_dir=str(artifacts_dir),
+        statuses=["completed", "failed", "pending"],
+    )
+    client = CountingClient()
+    rows = await resume_batch_async(
+        client=client,
+        batch_run_id=batch_run_id,
+        force=True,
+        poll_seconds=0.0,
+        max_wait_seconds=2.0,
+        artifacts_dir=artifacts_dir,
+        db_path=artifacts_dir / "experiments.db",
+    )
+
+    assert len(rows) == 3
+    assert client.create_calls == 3
+
+
+@pytest.mark.anyio
+async def test_resume_batch_async_nonexistent_batch(tmp_path) -> None:
+    with pytest.raises(ValueError, match="not found"):
+        await resume_batch_async(
+            client=MockAsyncFKPinnClient(),
+            batch_run_id="missing-batch",
+            artifacts_dir=tmp_path / "artifacts",
+            db_path=tmp_path / "artifacts" / "experiments.db",
+        )
