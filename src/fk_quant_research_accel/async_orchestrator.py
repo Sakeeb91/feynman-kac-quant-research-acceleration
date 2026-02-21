@@ -251,3 +251,34 @@ async def _submit_and_poll_scenario(
     )
     await _run_store(artifact_store.atomic_write_json, scenario_dir / "result.json", record)
     return record
+
+
+async def _execute_scenario_safe(
+    *,
+    client: AsyncFKPinnClient,
+    store: MetadataStore,
+    artifact_store: ArtifactStore,
+    scenario: Scenario,
+    scenario_run_id: str,
+    scenario_dir: Path,
+    batch_config: BatchConfig,
+    poll_seconds: float,
+    max_wait_seconds: float,
+    limiter: CapacityLimiter,
+    max_retries: int,
+    results: list[dict[str, Any]],
+) -> None:
+    async with limiter:
+        record = await _submit_and_poll_scenario(
+            client=client,
+            store=store,
+            artifact_store=artifact_store,
+            scenario=scenario,
+            scenario_run_id=scenario_run_id,
+            scenario_dir=scenario_dir,
+            batch_config=batch_config,
+            poll_seconds=poll_seconds,
+            max_wait_seconds=max_wait_seconds,
+            max_retries=max_retries,
+        )
+    results.append(record)
