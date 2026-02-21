@@ -398,7 +398,33 @@ async def run_batch_async(
             artifact_dir=str(batch_dir),
             manifest_path=str(manifest_path),
         )
-        _ = (poll_seconds, max_wait_seconds, max_retries)
+        execution_items: list[tuple[Scenario, str, Path]] = []
+        for scenario in scenarios:
+            scenario_run_id = str(generate_scenario_run_id())
+            scenario_dir = artifact_store.create_scenario_dir(batch_run_id, scenario_run_id)
+            await _run_store(
+                store.create_scenario_run,
+                scenario_run_id,
+                batch_run_id,
+                json.dumps(scenario.as_parameters(), sort_keys=True),
+                _now_iso(),
+            )
+            execution_items.append((scenario, scenario_run_id, scenario_dir))
+
+        async with client:
+            records = await _execute_scenarios_concurrent(
+                client=client,
+                store=store,
+                artifact_store=artifact_store,
+                batch_config=batch_config,
+                execution_items=execution_items,
+                poll_seconds=poll_seconds,
+                max_wait_seconds=max_wait_seconds,
+                concurrency_limit=concurrency_limit,
+                max_retries=max_retries,
+            )
+
+        _ = records
         raise NotImplementedError
     finally:
         if store is not None:
