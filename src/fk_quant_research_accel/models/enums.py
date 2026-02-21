@@ -26,6 +26,9 @@ class OptionType(str, Enum):
     PUT = "put"
     ASIAN_CALL = "asian_call"
     BARRIER_UP_AND_OUT = "barrier_up_and_out"
+    BASKET = "basket"
+    BASKET_CALL = "basket_call"
+    BASKET_PUT = "basket_put"
 
 
 class ScoringStrategy(str, Enum):

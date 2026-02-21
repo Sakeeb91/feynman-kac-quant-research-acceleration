@@ -311,12 +311,12 @@ def test_preflight_catches_scalar_correlation_out_of_range() -> None:
 
 
 def test_preflight_catches_dim_option_incompatibility() -> None:
-    grid = ScenarioGridConfig.model_construct(
-        dimensions=[1],
-        volatilities=[0.2],
-        correlations=[0.0],
-        option_types=["basket"],
-    )
+    grid = ScenarioGridConfig.model_validate({
+        "dimensions": [1],
+        "volatilities": [0.2],
+        "correlations": [0.0],
+        "option_types": ["basket"],
+    })
     manifest = _manifest_with_grid(grid)
 
     errors = validate_manifest(manifest)
@@ -339,12 +339,12 @@ def test_preflight_collects_multiple_errors() -> None:
 
 
 def test_preflight_checks_cartesian_product_combinations() -> None:
-    grid = ScenarioGridConfig.model_construct(
-        dimensions=[1, 5],
-        volatilities=[0.2],
-        correlations=[0.0],
-        option_types=["basket"],
-    )
+    grid = ScenarioGridConfig.model_validate({
+        "dimensions": [1, 5],
+        "volatilities": [0.2],
+        "correlations": [0.0],
+        "option_types": ["basket"],
+    })
     manifest = _manifest_with_grid(grid)
 
     errors = validate_manifest(manifest)
