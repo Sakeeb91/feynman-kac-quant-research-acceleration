@@ -228,6 +228,26 @@ async def _submit_and_poll_scenario(
         "checkpoint_path": None,
     }
     record["score"] = compute_score(record)
+    completed_at = _now_iso()
 
-    _ = (artifact_store, scenario_dir, result_item)
-    raise NotImplementedError
+    checkpoint_path = await _fetch_checkpoint(
+        simulation_id=simulation_id,
+        result_item=result_item,
+        scenario_dir=scenario_dir,
+        artifact_store=artifact_store,
+    )
+    if checkpoint_path is not None:
+        record["checkpoint_path"] = str(checkpoint_path)
+
+    await _run_store(
+        store.persist_scenario_result,
+        scenario_run_id,
+        record["status"],
+        json.dumps(record, sort_keys=True),
+        record["score"],
+        record["error_message"],
+        completed_at,
+        record["checkpoint_path"],
+    )
+    await _run_store(artifact_store.atomic_write_json, scenario_dir / "result.json", record)
+    return record
