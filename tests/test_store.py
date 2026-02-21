@@ -196,6 +196,55 @@ def test_metadata_store_failed_result_increments_failed_count(tmp_path) -> None:
     assert batch_row["failed_count"] == 1
 
 
+def test_metadata_store_returns_only_incomplete_scenarios(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    batch_run_id = str(generate_batch_run_id())
+    pending_id = str(generate_scenario_run_id())
+    submitted_id = str(generate_scenario_run_id())
+    completed_id = str(generate_scenario_run_id())
+    failed_id = str(generate_scenario_run_id())
+
+    store.create_batch_run(
+        batch_run_id=batch_run_id,
+        created_at=datetime.now(UTC).isoformat(),
+        config_json="{}",
+        manifest_schema_version=1,
+        git_sha=None,
+        git_dirty=None,
+        python_version="3.12.0",
+        os_info="test-os",
+        seed=None,
+        scenario_count=4,
+        artifact_path=str(tmp_path / "artifacts" / batch_run_id),
+    )
+    for scenario_run_id in [pending_id, submitted_id, completed_id, failed_id]:
+        store.create_scenario_run(
+            scenario_run_id=scenario_run_id,
+            batch_run_id=batch_run_id,
+            scenario_json="{}",
+            created_at=datetime.now(UTC).isoformat(),
+        )
+
+    store.update_scenario_status(submitted_id, "submitted")
+    store.persist_scenario_result(
+        scenario_run_id=completed_id,
+        status="completed",
+        result_json=json.dumps({"status": "completed"}),
+    )
+    store.persist_scenario_result(
+        scenario_run_id=failed_id,
+        status="failed",
+        result_json=json.dumps({"status": "failed"}),
+    )
+
+    incomplete = store.get_incomplete_scenario_runs(batch_run_id)
+    store.close()
+
+    observed_ids = {row["scenario_run_id"] for row in incomplete}
+    assert observed_ids == {pending_id, submitted_id}
+
+
 def test_artifact_store_creates_batch_and_scenario_dirs(tmp_path) -> None:
     artifacts = ArtifactStore(tmp_path / "artifacts")
     batch_run_id = str(generate_batch_run_id())
