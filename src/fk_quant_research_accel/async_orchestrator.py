@@ -96,12 +96,23 @@ async def _fetch_checkpoint(
     checkpoint_path = checkpoint_dir / "model_checkpoint.pt"
     log = structlog.get_logger().bind(simulation_id=simulation_id)
     checkpoint_url = result_item.get("checkpoint_url")
-    if checkpoint_url:
-        async with httpx.AsyncClient(timeout=30.0) as download_client:
-            response = await download_client.get(str(checkpoint_url))
-            response.raise_for_status()
-            await _run_store(artifact_store.atomic_write_bytes, checkpoint_path, response.content)
-        return checkpoint_path
+    checkpoint_inline = result_item.get("checkpoint")
 
-    _ = log
-    return None
+    try:
+        if checkpoint_url:
+            async with httpx.AsyncClient(timeout=30.0) as download_client:
+                response = await download_client.get(str(checkpoint_url))
+                response.raise_for_status()
+                await _run_store(artifact_store.atomic_write_bytes, checkpoint_path, response.content)
+            return checkpoint_path
+
+        if checkpoint_inline:
+            decoded = base64.b64decode(checkpoint_inline)
+            await _run_store(artifact_store.atomic_write_bytes, checkpoint_path, decoded)
+            return checkpoint_path
+
+        log.debug("checkpoint_not_available")
+        return None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("checkpoint_fetch_failed", error=str(exc))
+        return None
