@@ -95,5 +95,13 @@ async def _fetch_checkpoint(
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     checkpoint_path = checkpoint_dir / "model_checkpoint.pt"
     log = structlog.get_logger().bind(simulation_id=simulation_id)
-    _ = (result_item, artifact_store, checkpoint_path, log)
+    checkpoint_url = result_item.get("checkpoint_url")
+    if checkpoint_url:
+        async with httpx.AsyncClient(timeout=30.0) as download_client:
+            response = await download_client.get(str(checkpoint_url))
+            response.raise_for_status()
+            await _run_store(artifact_store.atomic_write_bytes, checkpoint_path, response.content)
+        return checkpoint_path
+
+    _ = log
     return None
