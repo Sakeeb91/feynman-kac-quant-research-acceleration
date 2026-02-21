@@ -1,9 +1,9 @@
 ---
-status: complete
+status: diagnosed
 phase: 02-yaml-manifests-validation-and-domain-models
 source: [02-01-SUMMARY.md, 02-02-SUMMARY.md, 02-03-SUMMARY.md]
 started: 2026-02-21T12:00:00Z
-updated: 2026-02-21T12:10:00Z
+updated: 2026-02-21T12:12:00Z
 ---
 
 ## Current Test
@@ -65,7 +65,14 @@ skipped: 0
   reason: "User reported: basket is not in OptionType enum, so manifest schema validation rejects it before preflight can check dim-option compatibility. The preflight basket check is unreachable dead code."
   severity: minor
   test: 6
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "_BASKET_OPTION_TYPES = {'basket', 'basket_call', 'basket_put'} in constraints.py references strings not present in OptionType enum (call, put, asian_call, barrier_up_and_out). ScenarioGridConfig.option_types is typed list[OptionType], so Pydantic rejects basket before preflight runs. Tests pass only because they use model_construct() which bypasses validation."
+  artifacts:
+    - path: "src/fk_quant_research_accel/models/enums.py"
+      issue: "OptionType enum missing basket, basket_call, basket_put values"
+    - path: "src/fk_quant_research_accel/validation/constraints.py"
+      issue: "_BASKET_OPTION_TYPES references strings not in OptionType enum"
+    - path: "tests/test_validation.py"
+      issue: "5 basket tests use model_construct() to bypass Pydantic, masking the dead code"
+  missing:
+    - "Add basket, basket_call, basket_put to OptionType enum OR remove dead basket check from constraints.py"
   debug_session: ""
