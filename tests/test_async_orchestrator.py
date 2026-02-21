@@ -147,3 +147,44 @@ async def test_run_batch_async_basic(tmp_path) -> None:
     assert batch_rows[0][0] == "completed"
     assert len(scenario_rows) == 3
     assert {row[0] for row in scenario_rows} == {"completed"}
+
+
+@pytest.mark.anyio
+async def test_concurrent_execution_respects_limit(tmp_path) -> None:
+    class TrackingClient(MockAsyncFKPinnClient):
+        def __init__(self) -> None:
+            super().__init__()
+            self._active = 0
+            self.max_active = 0
+
+        async def create_simulation(
+            self,
+            problem_id: str,
+            parameters: dict[str, Any],
+            training_config: dict[str, Any],
+        ) -> dict[str, Any]:
+            del problem_id, parameters, training_config
+            self._active += 1
+            self.max_active = max(self.max_active, self._active)
+            await anyio.sleep(0.01)
+            return {"id": f"sim-{uuid4()}"}
+
+        async def get_result(self, simulation_id: str) -> dict[str, Any]:
+            payload = await super().get_result(simulation_id)
+            self._active -= 1
+            return payload
+
+    client = TrackingClient()
+    artifacts_dir = tmp_path / "artifacts"
+    await run_batch_async(
+        client=client,
+        scenarios=_scenarios(5),
+        batch_config=BatchConfig(),
+        poll_seconds=0.0,
+        max_wait_seconds=2.0,
+        concurrency_limit=2,
+        artifacts_dir=artifacts_dir,
+        db_path=artifacts_dir / "experiments.db",
+    )
+
+    assert client.max_active <= 2
