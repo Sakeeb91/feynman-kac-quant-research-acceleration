@@ -48,3 +48,11 @@ TERMINAL_STATUSES = {
     ScenarioStatus.FAILED.value,
     ScenarioStatus.CANCELLED.value,
 }
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _known_statuses() -> set[str]:
+    return {status.value for status in ScenarioStatus}
