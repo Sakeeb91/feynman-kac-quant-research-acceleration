@@ -28,6 +28,7 @@ def init_db(db_path: str | Path) -> sqlite3.Connection:
 def _apply_migrations(conn: sqlite3.Connection, current_version: int) -> None:
     migrations = {
         0: _migrate_v0_to_v1,
+        1: _migrate_v1_to_v2,
     }
     for version in range(current_version, CURRENT_SCHEMA_VERSION):
         migration = migrations.get(version)
