@@ -268,17 +268,36 @@ async def _execute_scenario_safe(
     max_retries: int,
     results: list[dict[str, Any]],
 ) -> None:
+    log = structlog.get_logger().bind(scenario_run_id=scenario_run_id)
     async with limiter:
-        record = await _submit_and_poll_scenario(
-            client=client,
-            store=store,
-            artifact_store=artifact_store,
-            scenario=scenario,
-            scenario_run_id=scenario_run_id,
-            scenario_dir=scenario_dir,
-            batch_config=batch_config,
-            poll_seconds=poll_seconds,
-            max_wait_seconds=max_wait_seconds,
-            max_retries=max_retries,
-        )
+        simulation_id = ""
+        try:
+            record = await _submit_and_poll_scenario(
+                client=client,
+                store=store,
+                artifact_store=artifact_store,
+                scenario=scenario,
+                scenario_run_id=scenario_run_id,
+                scenario_dir=scenario_dir,
+                batch_config=batch_config,
+                poll_seconds=poll_seconds,
+                max_wait_seconds=max_wait_seconds,
+                max_retries=max_retries,
+            )
+            simulation_id = str(record["simulation_id"])
+        except Exception as exc:  # noqa: BLE001
+            error_message = str(exc)
+            record = _build_failure_record(scenario, simulation_id, error_message)
+            await _run_store(
+                store.persist_scenario_result,
+                scenario_run_id,
+                ScenarioStatus.FAILED.value,
+                json.dumps(record, sort_keys=True),
+                record["score"],
+                error_message,
+                _now_iso(),
+                None,
+            )
+            await _run_store(artifact_store.atomic_write_json, scenario_dir / "result.json", record)
+            log.error("scenario_failed", error=error_message, exc_info=True)
     results.append(record)
