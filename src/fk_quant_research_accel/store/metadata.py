@@ -207,5 +207,16 @@ class MetadataStore:
         )
         self.connection.commit()
 
+    def update_scenario_retry_count(self, scenario_run_id: str, retry_count: int) -> None:
+        self.connection.execute(
+            """
+            UPDATE scenario_runs
+            SET retry_count = ?
+            WHERE scenario_run_id = ?
+            """,
+            (retry_count, scenario_run_id),
+        )
+        self.connection.commit()
+
     def close(self) -> None:
         self.connection.close()
