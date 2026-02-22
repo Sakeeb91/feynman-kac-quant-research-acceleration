@@ -36,7 +36,36 @@ def _diagnose_from_final_state(
     grad_norm: Any,
     val_loss: Any,
 ) -> ConvergenceHealth:
-    raise NotImplementedError
+    train_loss_value = float(train_loss) if _is_finite(train_loss) else None
+    grad_norm_value = abs(float(grad_norm)) if _is_finite(grad_norm) else None
+    val_loss_value = float(val_loss) if _is_finite(val_loss) else None
+
+    if grad_norm_value is not None and grad_norm_value > GRAD_NORM_EXPLODING_THRESHOLD:
+        return ConvergenceHealth.EXPLODING
+
+    if (
+        train_loss_value is not None
+        and train_loss_value >= LOSS_STAGNATION_THRESHOLD
+        and grad_norm_value is not None
+        and grad_norm_value < 1e-6
+    ):
+        return ConvergenceHealth.STAGNATING
+
+    if (
+        train_loss_value is not None
+        and val_loss_value is not None
+        and train_loss_value > 0.0
+        and (val_loss_value / train_loss_value) > 3.0
+    ):
+        return ConvergenceHealth.OSCILLATING
+
+    if grad_norm_value is not None and grad_norm_value > GRAD_NORM_HEALTHY_THRESHOLD:
+        return ConvergenceHealth.OSCILLATING
+
+    if train_loss_value is not None and train_loss_value <= LOSS_HEALTHY_THRESHOLD:
+        return ConvergenceHealth.HEALTHY
+
+    return ConvergenceHealth.HEALTHY
 
 
 def diagnose_convergence(record: dict[str, Any]) -> ConvergenceHealth:
