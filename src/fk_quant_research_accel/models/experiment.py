@@ -52,6 +52,10 @@ class BatchRunConfig(BaseModel, frozen=True):
 class ScoringConfig(BaseModel, frozen=True):
     strategy: ScoringStrategy = ScoringStrategy.LOSS_BASED
     grad_norm_weight: float = Field(default=0.01, ge=0.0)
+    custom_scorer: str | None = Field(
+        default=None,
+        description="Dotted import path to custom scorer",
+    )
 
 
 class OutputConfig(BaseModel, frozen=True):
