@@ -82,3 +82,51 @@ def test_get_scorer_loss_based_missing_loss() -> None:
     scorer = get_scorer(ScoringConfig(strategy=ScoringStrategy.LOSS_BASED))
 
     assert scorer({"status": "completed", "train_loss": None}) == float("inf")
+
+
+def test_get_scorer_convergence_rate() -> None:
+    scorer = get_scorer(ScoringConfig(strategy=ScoringStrategy.CONVERGENCE_RATE))
+
+    score = scorer(
+        {
+            "status": "completed",
+            "train_loss": 0.1,
+            "runtime_seconds": 100.0,
+        }
+    )
+
+    assert score == pytest.approx(0.1 * math.log1p(100.0))
+
+
+def test_get_scorer_convergence_rate_zero_runtime() -> None:
+    scorer = get_scorer(ScoringConfig(strategy=ScoringStrategy.CONVERGENCE_RATE))
+
+    score = scorer(
+        {
+            "status": "completed",
+            "train_loss": 0.1,
+            "runtime_seconds": 0,
+        }
+    )
+
+    assert score == pytest.approx(0.1 * math.log1p(1.0))
+
+
+def test_get_scorer_pareto_placeholder() -> None:
+    scorer = get_scorer(ScoringConfig(strategy=ScoringStrategy.PARETO_MULTI_OBJECTIVE))
+
+    score = scorer({"status": "completed", "train_loss": 0.123})
+
+    assert score == pytest.approx(0.123)
+
+
+def test_get_scorer_unknown_strategy() -> None:
+    config = ScoringConfig.model_construct(
+        strategy="not_registered",
+        grad_norm_weight=0.01,
+        custom_scorer=None,
+        pareto_objectives=["train_loss", "grad_norm"],
+    )
+
+    with pytest.raises(ValueError):
+        get_scorer(config)
