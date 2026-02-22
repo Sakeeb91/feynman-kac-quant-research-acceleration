@@ -56,6 +56,10 @@ class ScoringConfig(BaseModel, frozen=True):
         default=None,
         description="Dotted import path to custom scorer",
     )
+    pareto_objectives: list[str] = Field(
+        default_factory=lambda: ["train_loss", "grad_norm"],
+        description="Objective columns for Pareto scoring",
+    )
 
 
 class OutputConfig(BaseModel, frozen=True):
