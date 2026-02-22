@@ -18,7 +18,6 @@ from .orchestrator import (
     BatchConfig,
     generate_black_scholes_scenarios,
     generate_scenarios_from_manifest,
-    run_batch,
 )
 from .reporting import write_csv
 from .validation import validate_manifest
