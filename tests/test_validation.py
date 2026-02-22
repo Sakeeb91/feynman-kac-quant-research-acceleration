@@ -386,8 +386,9 @@ def test_preflight_returns_preflight_error_objects() -> None:
 
 
 def test_preflight_custom_scorer_valid() -> None:
+    scoring = _valid_manifest().scoring.model_copy(update={"custom_scorer": "math.fabs"})
     manifest = _valid_manifest().model_copy(
-        update={"scoring": {"custom_scorer": "math.fabs"}}
+        update={"scoring": scoring}
     )
 
     errors = validate_manifest(manifest)
@@ -396,8 +397,9 @@ def test_preflight_custom_scorer_valid() -> None:
 
 
 def test_preflight_custom_scorer_invalid_import() -> None:
+    scoring = _valid_manifest().scoring.model_copy(update={"custom_scorer": "nonexistent.module.fn"})
     manifest = _valid_manifest().model_copy(
-        update={"scoring": {"custom_scorer": "nonexistent.module.fn"}}
+        update={"scoring": scoring}
     )
 
     errors = validate_manifest(manifest)
@@ -406,8 +408,9 @@ def test_preflight_custom_scorer_invalid_import() -> None:
 
 
 def test_preflight_custom_scorer_not_callable() -> None:
+    scoring = _valid_manifest().scoring.model_copy(update={"custom_scorer": "math.pi"})
     manifest = _valid_manifest().model_copy(
-        update={"scoring": {"custom_scorer": "math.pi"}}
+        update={"scoring": scoring}
     )
 
     errors = validate_manifest(manifest)
