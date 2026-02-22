@@ -72,7 +72,7 @@ def render_leaderboard(
     table.add_column("Dim", justify="right", width=5)
     table.add_column("Vol", justify="right", width=8)
     table.add_column("Corr", justify="right", width=8)
-    table.add_column("Type", width=12)
+    table.add_column("Type", width=10)
     table.add_column("Loss", justify="right", width=12)
     table.add_column("Status", justify="center", width=10)
 
