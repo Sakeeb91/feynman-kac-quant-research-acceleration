@@ -47,7 +47,7 @@ def _records() -> list[dict[str, object]]:
 
 def test_render_leaderboard_basic() -> None:
     buffer = StringIO()
-    console = Console(file=buffer, force_terminal=False, color_system=None)
+    console = Console(file=buffer, force_terminal=False, color_system=None, width=200)
 
     render_leaderboard(_records(), console=console)
 
@@ -58,7 +58,7 @@ def test_render_leaderboard_basic() -> None:
 
 def test_render_leaderboard_empty() -> None:
     buffer = StringIO()
-    console = Console(file=buffer, force_terminal=False, color_system=None)
+    console = Console(file=buffer, force_terminal=False, color_system=None, width=200)
 
     render_leaderboard([], console=console)
 
@@ -68,7 +68,7 @@ def test_render_leaderboard_empty() -> None:
 
 def test_render_leaderboard_health_colors() -> None:
     buffer = StringIO()
-    console = Console(file=buffer, force_terminal=False, color_system=None)
+    console = Console(file=buffer, force_terminal=False, color_system=None, width=200)
 
     render_leaderboard(_records(), console=console)
 
@@ -102,7 +102,7 @@ def test_render_leaderboard_n_limit() -> None:
         },
     ]
     buffer = StringIO()
-    console = Console(file=buffer, force_terminal=False, color_system=None)
+    console = Console(file=buffer, force_terminal=False, color_system=None, width=200)
 
     render_leaderboard(rows, n=3, console=console)
 
