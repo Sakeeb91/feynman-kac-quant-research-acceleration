@@ -82,11 +82,11 @@ Plans:
   1. Researcher can select from built-in scorers (loss-based, convergence-rate, Pareto multi-objective) or provide a custom scoring function via manifest config
   2. Each scenario result includes an automated convergence health label (healthy, oscillating, stagnating, or exploding) based on loss and gradient patterns
   3. Leaderboard output displays rank score alongside convergence health label for every scenario, enabling the researcher to spot problematic runs at a glance
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md -- Pluggable scoring module (registry, 3 built-in scorers, Pareto), convergence diagnostics, schema extensions (TDD)
+- [ ] 04-02-PLAN.md -- Orchestrator integration (scoring + diagnostics wiring) and Rich leaderboard CLI output
 
 ### Phase 5: Run Analysis CLI
 **Goal**: Researchers can query, compare, and drill into past experiment runs from the command line, turning individual batches into a systematic research program
@@ -137,7 +137,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 1. Durable Storage Foundation | 3/3 | Executed (UAT in progress) | 2026-02-19 |
 | 2. YAML Manifests, Validation, and Domain Models | 4/4 | Complete (gaps closed) | 2026-02-21 |
 | 3. Concurrent Durable Execution | 3/3 | Complete (UAT passed) | 2026-02-22 |
-| 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Not started | - |
+| 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Planned | - |
 | 5. Run Analysis CLI | 0/1 | Not started | - |
 | 6. Extensibility | 0/2 | Not started | - |
 | 7. Model Packaging | 0/1 | Not started | - |
