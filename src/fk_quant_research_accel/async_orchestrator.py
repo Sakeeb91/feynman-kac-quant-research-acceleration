@@ -256,6 +256,7 @@ async def _submit_and_poll_scenario(
         "checkpoint_path": None,
     }
     record["score"] = scorer(record)
+    record["convergence_health"] = diagnose_convergence(record).value
     completed_at = _now_iso()
 
     checkpoint_path = await _fetch_checkpoint(
