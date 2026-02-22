@@ -91,4 +91,32 @@ def assign_pareto_scores(
     records: list[dict[str, Any]],
     objectives: list[str] | None = None,
 ) -> list[float]:
-    raise NotImplementedError
+    if not records:
+        return []
+
+    objective_fields = objectives or ["train_loss", "grad_norm"]
+    fronts = non_dominated_sort(records, objective_fields)
+    scores = [float("inf")] * len(records)
+
+    for front_index, front in enumerate(fronts):
+        if not front:
+            continue
+
+        def _secondary_rank(index: int) -> float:
+            total = 0.0
+            for objective in objective_fields:
+                raw_value = records[index].get(objective)
+                if raw_value is None:
+                    return float("inf")
+                value = float(raw_value)
+                if not math.isfinite(value):
+                    return float("inf")
+                total += value
+            return total
+
+        ordered_front = sorted(front, key=_secondary_rank)
+        denominator = max(1, len(ordered_front))
+        for position, index in enumerate(ordered_front):
+            scores[index] = float(front_index) + (position / denominator)
+
+    return scores
