@@ -321,21 +321,7 @@ def test_run_batch_default_concurrency(monkeypatch, tmp_path) -> None:
 
 
 def test_cli_manifest_overrides_legacy_flags(monkeypatch, tmp_path) -> None:
-    captured: dict[str, object] = {}
-
-    def fake_run_batch(**kwargs):
-        captured.update(kwargs)
-        return [
-            {
-                "score": 0.1,
-                "dim": 5,
-                "volatility": 0.2,
-                "correlation": 0.0,
-                "option_type": "call",
-                "status": "completed",
-                "train_loss": 0.1,
-            }
-        ]
+    captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
 
     manifest_path = _write_manifest(
         tmp_path / "experiment.yaml",
@@ -350,8 +336,6 @@ def test_cli_manifest_overrides_legacy_flags(monkeypatch, tmp_path) -> None:
         },
     )
 
-    monkeypatch.setattr(cli_module, "FKPinnClient", FakeClient)
-    monkeypatch.setattr(cli_module, "run_batch", fake_run_batch)
     monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
@@ -373,9 +357,9 @@ def test_cli_manifest_overrides_legacy_flags(monkeypatch, tmp_path) -> None:
     )
 
     assert result.exit_code == 0
-    assert isinstance(captured["client"], FakeClient)
-    assert captured["client"].base_url == "http://manifest-backend:9000"
-    assert len(captured["scenarios"]) == 1
+    call = captured["callable"]
+    assert call.keywords["client"].base_url == "http://manifest-backend:9000"
+    assert len(call.keywords["scenarios"]) == 1
 
 
 def test_cli_manifest_load_failure_exits_1(monkeypatch, tmp_path) -> None:
