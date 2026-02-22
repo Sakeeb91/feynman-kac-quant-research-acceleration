@@ -10,6 +10,7 @@ from typing import Iterable
 import structlog
 import typer
 
+from .async_client import AsyncFKPinnClient
 from .client import FKPinnClient
 from .logging import configure_logging
 from .models import ExperimentManifest, LogLevel, content_hash, load_manifest
