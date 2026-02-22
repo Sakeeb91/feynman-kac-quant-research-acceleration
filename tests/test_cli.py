@@ -109,21 +109,7 @@ def test_resume_batch_help() -> None:
 
 
 def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
-    captured: dict[str, object] = {}
-
-    def fake_run_batch(**kwargs):
-        captured.update(kwargs)
-        return [
-            {
-                "score": 0.1,
-                "dim": 5,
-                "volatility": 0.2,
-                "correlation": 0.0,
-                "option_type": "call",
-                "status": "completed",
-                "train_loss": 0.1,
-            }
-        ]
+    captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
 
     manifest_path = _write_manifest(
         tmp_path / "experiment.yaml",
@@ -149,8 +135,6 @@ def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
         },
     )
 
-    monkeypatch.setattr(cli_module, "FKPinnClient", FakeClient)
-    monkeypatch.setattr(cli_module, "run_batch", fake_run_batch)
     monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
@@ -160,11 +144,12 @@ def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
     )
 
     assert result.exit_code == 0
-    assert isinstance(captured["client"], FakeClient)
-    assert captured["client"].base_url == "http://manifest-backend:9000"
-    assert captured["experiment_manifest_hash"] is not None
-    assert captured["seed"] == 123
-    assert str(captured["artifacts_dir"]).endswith("artifacts")
+    call = captured["callable"]
+    assert call.func == cli_module.run_batch_async
+    assert call.keywords["client"].base_url == "http://manifest-backend:9000"
+    assert call.keywords["experiment_manifest_hash"] is not None
+    assert call.keywords["seed"] == 123
+    assert str(call.keywords["artifacts_dir"]).endswith("artifacts")
 
 
 def test_cli_manifest_preflight_fails_exits_1(monkeypatch, tmp_path) -> None:
