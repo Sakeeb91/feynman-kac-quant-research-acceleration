@@ -251,18 +251,25 @@ def resume_batch_command(
     artifacts_dir: str = typer.Option("artifacts", "--artifacts-dir"),
     output: str = typer.Option("artifacts/resume_results.csv", "--output"),
 ) -> None:
-    _ = (
-        batch_run_id,
-        force,
-        concurrency,
-        max_retries,
-        base_url,
-        poll_seconds,
-        max_wait_seconds,
-        db_path,
-        artifacts_dir,
-        output,
+    log = structlog.get_logger()
+    log.info("resume_batch_started", batch_run_id=batch_run_id, force=force)
+
+    async_client = AsyncFKPinnClient(base_url=base_url, concurrency_limit=concurrency)
+    rows = anyio.run(
+        partial(
+            resume_batch_async,
+            client=async_client,
+            batch_run_id=batch_run_id,
+            force=force,
+            concurrency_limit=concurrency,
+            max_retries=max_retries,
+            poll_seconds=poll_seconds,
+            max_wait_seconds=max_wait_seconds,
+            db_path=db_path,
+            artifacts_dir=artifacts_dir,
+        )
     )
+    _ = (log, rows, output)
 
 def main() -> None:
     app()
