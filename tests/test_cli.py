@@ -153,12 +153,12 @@ def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
 
 
 def test_cli_manifest_preflight_fails_exits_1(monkeypatch, tmp_path) -> None:
-    called = {"run_batch": False}
+    called = {"anyio_run": False}
 
-    def fake_run_batch(**kwargs):
-        called["run_batch"] = True
-        del kwargs
-        return []
+    def fake_anyio_run(callable_obj):
+        called["anyio_run"] = True
+        del callable_obj
+        return _ok_rows()
 
     manifest_path = _write_manifest(
         tmp_path / "invalid.yaml",
@@ -173,15 +173,14 @@ def test_cli_manifest_preflight_fails_exits_1(monkeypatch, tmp_path) -> None:
         },
     )
 
-    monkeypatch.setattr(cli_module, "FKPinnClient", FakeClient)
-    monkeypatch.setattr(cli_module, "run_batch", fake_run_batch)
+    monkeypatch.setattr(cli_module.anyio, "run", fake_anyio_run)
     monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(app, ["run-batch", "--manifest", str(manifest_path)])
 
     assert result.exit_code == 1
-    assert called["run_batch"] is False
+    assert called["anyio_run"] is False
 
 
 def test_cli_backward_compat_flags(monkeypatch, tmp_path) -> None:
