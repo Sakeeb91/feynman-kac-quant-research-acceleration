@@ -184,24 +184,8 @@ def test_cli_manifest_preflight_fails_exits_1(monkeypatch, tmp_path) -> None:
 
 
 def test_cli_backward_compat_flags(monkeypatch, tmp_path) -> None:
-    captured: dict[str, object] = {}
+    captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
 
-    def fake_run_batch(**kwargs):
-        captured.update(kwargs)
-        return [
-            {
-                "score": 0.1,
-                "dim": 5,
-                "volatility": 0.2,
-                "correlation": 0.0,
-                "option_type": "call",
-                "status": "completed",
-                "train_loss": 0.1,
-            }
-        ]
-
-    monkeypatch.setattr(cli_module, "FKPinnClient", FakeClient)
-    monkeypatch.setattr(cli_module, "run_batch", fake_run_batch)
     monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
@@ -225,8 +209,9 @@ def test_cli_backward_compat_flags(monkeypatch, tmp_path) -> None:
     )
 
     assert result.exit_code == 0
-    assert isinstance(captured["client"], FakeClient)
-    assert captured["client"].base_url == "http://legacy-backend:8000"
+    call = captured["callable"]
+    assert call.func == cli_module.run_batch_async
+    assert call.keywords["client"].base_url == "http://legacy-backend:8000"
 
 
 def test_cli_base_url_required_without_manifest() -> None:
