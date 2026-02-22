@@ -215,6 +215,55 @@ def run_batch_command(
     log.info("batch_complete", rows=len(rows), output=str(output_path))
 
 
+@app.command("resume-batch")
+def resume_batch_command(
+    batch_run_id: str = typer.Argument(
+        ...,
+        help="Batch run ID to resume (from previous run-batch output)",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Re-run ALL scenarios, including completed ones",
+    ),
+    concurrency: int = typer.Option(
+        20,
+        "--concurrency",
+        min=1,
+        max=100,
+        help="Max concurrent scenario executions",
+    ),
+    max_retries: int = typer.Option(
+        3,
+        "--max-retries",
+        min=0,
+        max=10,
+        help="Max retry attempts per transient HTTP error",
+    ),
+    base_url: str = typer.Option(
+        ...,
+        "--base-url",
+        help="FK PINN backend URL",
+    ),
+    poll_seconds: float = typer.Option(2.0, "--poll-seconds"),
+    max_wait_seconds: float = typer.Option(1800.0, "--max-wait-seconds"),
+    db_path: str = typer.Option("artifacts/experiments.db", "--db-path"),
+    artifacts_dir: str = typer.Option("artifacts", "--artifacts-dir"),
+    output: str = typer.Option("artifacts/resume_results.csv", "--output"),
+) -> None:
+    _ = (
+        batch_run_id,
+        force,
+        concurrency,
+        max_retries,
+        base_url,
+        poll_seconds,
+        max_wait_seconds,
+        db_path,
+        artifacts_dir,
+        output,
+    )
+
 def main() -> None:
     app()
 
