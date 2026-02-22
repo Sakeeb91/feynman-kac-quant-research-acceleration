@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
 from fk_quant_research_accel.models.enums import ScoringStrategy
@@ -22,3 +21,21 @@ def score_loss_based(record: dict[str, Any], *, grad_norm_weight: float = 0.01) 
 
     grad_penalty = 0.0 if grad_norm is None else abs(float(grad_norm)) * grad_norm_weight
     return float(train_loss) + grad_penalty
+
+
+@register_scorer(ScoringStrategy.CONVERGENCE_RATE)
+def score_convergence_rate(record: dict[str, Any]) -> float:
+    train_loss = record.get("train_loss")
+    status = record.get("status")
+    runtime_seconds = record.get("runtime_seconds")
+
+    if status != "completed" or train_loss is None:
+        return float("inf")
+
+    runtime = 1.0
+    if runtime_seconds is not None:
+        runtime = max(1.0, float(runtime_seconds))
+
+    import math
+
+    return float(train_loss) * math.log1p(runtime)
