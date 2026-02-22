@@ -61,3 +61,47 @@ def test_render_leaderboard_empty() -> None:
 
     output = buffer.getvalue()
     assert "Top 0 of 0" in output
+
+
+def test_render_leaderboard_health_colors() -> None:
+    buffer = StringIO()
+    console = Console(file=buffer, force_terminal=False, color_system=None)
+
+    render_leaderboard(_records(), console=console)
+
+    output = buffer.getvalue()
+    assert "healthy" in output
+    assert "oscillating" in output
+    assert "stagnating" in output
+
+
+def test_render_leaderboard_n_limit() -> None:
+    rows = _records() + [
+        {
+            "score": 0.4,
+            "convergence_health": "exploding",
+            "dim": 30,
+            "volatility": 0.5,
+            "correlation": 0.0,
+            "option_type": "call",
+            "train_loss": 0.4,
+            "status": "failed",
+        },
+        {
+            "score": 0.5,
+            "convergence_health": "healthy",
+            "dim": 40,
+            "volatility": 0.6,
+            "correlation": 0.0,
+            "option_type": "call",
+            "train_loss": 0.5,
+            "status": "completed",
+        },
+    ]
+    buffer = StringIO()
+    console = Console(file=buffer, force_terminal=False, color_system=None)
+
+    render_leaderboard(rows, n=3, console=console)
+
+    output = buffer.getvalue()
+    assert "Top 3 of 5" in output
