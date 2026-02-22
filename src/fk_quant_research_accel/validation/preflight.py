@@ -7,6 +7,7 @@ from itertools import product
 from typing import Any, cast
 
 from fk_quant_research_accel.models.experiment import ExperimentManifest
+from fk_quant_research_accel.scoring.registry import _import_custom_scorer
 from fk_quant_research_accel.validation.constraints import (
     validate_correlation_matrix,
     validate_dimension_option_compatibility,
@@ -89,5 +90,27 @@ def validate_manifest(manifest: ExperimentManifest) -> list[PreflightError]:
                     message=message,
                 )
             )
+
+    custom_scorer = manifest.scoring.custom_scorer
+    if custom_scorer is not None:
+        try:
+            imported = _import_custom_scorer(custom_scorer)
+        except ValueError as exc:
+            errors.append(
+                PreflightError(
+                    field="scoring.custom_scorer",
+                    value=custom_scorer,
+                    message=str(exc),
+                )
+            )
+        else:
+            if not callable(imported):
+                errors.append(
+                    PreflightError(
+                        field="scoring.custom_scorer",
+                        value=custom_scorer,
+                        message=f"Custom scorer {custom_scorer!r} is not callable",
+                    )
+                )
 
     return errors
