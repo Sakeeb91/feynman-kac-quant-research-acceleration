@@ -52,6 +52,7 @@ class CompletedScenarioResult(BaseModel, frozen=True):
     progress: float = 1.0
     checkpoint_path: str | None = None
     extra_metrics: dict[str, Any] = Field(default_factory=dict)
+    convergence_health: str | None = None
 
 
 class FailedScenarioResult(BaseModel, frozen=True):
