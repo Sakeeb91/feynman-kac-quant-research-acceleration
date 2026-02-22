@@ -152,6 +152,9 @@ def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
                 "artifacts_dir": str(tmp_path / "artifacts"),
                 "db_path": str(tmp_path / "custom.db"),
             },
+            "scoring": {
+                "strategy": "convergence_rate",
+            },
         },
     )
 
@@ -170,6 +173,7 @@ def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
     assert call.keywords["experiment_manifest_hash"] is not None
     assert call.keywords["seed"] == 123
     assert str(call.keywords["artifacts_dir"]).endswith("artifacts")
+    assert call.keywords["scoring_config"].strategy.value == "convergence_rate"
 
 
 def test_run_batch_manifest_uses_async(monkeypatch, tmp_path) -> None:
