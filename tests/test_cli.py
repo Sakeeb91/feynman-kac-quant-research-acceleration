@@ -152,6 +152,44 @@ def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
     assert str(call.keywords["artifacts_dir"]).endswith("artifacts")
 
 
+def test_run_batch_manifest_uses_async(monkeypatch, tmp_path) -> None:
+    captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
+    manifest_path = _write_manifest(
+        tmp_path / "experiment.yaml",
+        {
+            "backend_url": "http://manifest-backend:9000",
+            "scenario_grid": {
+                "dimensions": [5],
+                "volatilities": [0.2],
+                "correlations": [0.0],
+                "option_types": ["call"],
+            },
+        },
+    )
+
+    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(
+        app,
+        [
+            "run-batch",
+            "--manifest",
+            str(manifest_path),
+            "--concurrency",
+            "10",
+            "--max-retries",
+            "2",
+        ],
+    )
+
+    assert result.exit_code == 0
+    call = captured["callable"]
+    assert call.func == cli_module.run_batch_async
+    assert call.keywords["concurrency_limit"] == 10
+    assert call.keywords["max_retries"] == 2
+
+
 def test_cli_manifest_preflight_fails_exits_1(monkeypatch, tmp_path) -> None:
     called = {"anyio_run": False}
 
