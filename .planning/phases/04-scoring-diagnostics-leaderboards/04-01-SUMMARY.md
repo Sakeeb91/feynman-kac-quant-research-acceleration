@@ -102,6 +102,9 @@ Implemented the Phase 4 scoring + diagnostics foundation with full TDD coverage.
 - `python3 -m pytest tests/test_reporting.py -q` -> passed
 - `python3 -m pytest tests/test_validation.py -q` -> passed
 - `python3 -m pytest tests/ -q` -> `191 passed`
+- `python3 -c "from fk_quant_research_accel.scoring import get_scorer, assign_pareto_scores"` -> passed
+- `python3 -c "from fk_quant_research_accel.diagnostics import diagnose_convergence; from fk_quant_research_accel.models import ConvergenceHealth"` -> passed
+- `python3 -c "from fk_quant_research_accel.reporting import compute_score; print(compute_score({'status': 'completed', 'train_loss': 0.05, 'grad_norm': 1.0}))"` -> `0.060000000000000005`
 
 ## Outcome
 Plan 04-01 is complete: scoring is now pluggable and extensible, Pareto ranking is available, convergence health diagnostics are implemented, `compute_score` remains backward-compatible, and invalid custom scorer references are caught before execution.
