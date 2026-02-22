@@ -109,6 +109,13 @@ def run_batch_command(
     learning_rate: float = typer.Option(1e-3, "--learning-rate"),
     poll_seconds: float = typer.Option(1.5, "--poll-seconds"),
     max_wait_seconds: float = typer.Option(1800.0, "--max-wait-seconds"),
+    concurrency: int = typer.Option(
+        20,
+        "--concurrency",
+        min=1,
+        max=100,
+        help="Max concurrent scenario executions",
+    ),
     output: str = typer.Option("artifacts/batch_results.csv", "--output"),
 ) -> None:
     log = structlog.get_logger()
