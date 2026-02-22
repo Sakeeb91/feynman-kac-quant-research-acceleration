@@ -39,3 +39,12 @@ def score_convergence_rate(record: dict[str, Any]) -> float:
     import math
 
     return float(train_loss) * math.log1p(runtime)
+
+
+@register_scorer(ScoringStrategy.PARETO_MULTI_OBJECTIVE)
+def score_pareto_placeholder(record: dict[str, Any]) -> float:
+    status = record.get("status")
+    train_loss = record.get("train_loss")
+    if status != "completed" or train_loss is None:
+        return float("inf")
+    return float(train_loss)
