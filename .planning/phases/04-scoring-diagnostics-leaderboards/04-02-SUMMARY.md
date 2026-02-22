@@ -77,6 +77,9 @@ Implemented orchestration and CLI integration for scoring strategies, convergenc
 - `python3 -m pytest tests/test_leaderboard.py -q` -> passed
 - `python3 -m pytest tests/test_cli.py -q` -> passed
 - `python3 -m pytest tests/ -q` -> `204 passed`
+- `python3 -c "from fk_quant_research_accel.leaderboard import render_leaderboard"` -> passed
+- `python3 -c "from fk_quant_research_accel.async_orchestrator import run_batch_async, resume_batch_async; from fk_quant_research_accel.orchestrator import run_batch"` -> passed
+- `rg -n "_log_top|top_scenario" src/fk_quant_research_accel/cli.py tests/test_cli.py` -> no matches
 
 ## Outcome
 Plan 04-02 is complete: both orchestrators now emit convergence health and respect scoring strategy, Pareto rescoring is applied when requested, and CLI output uses a Rich leaderboard with color-coded health labels.
