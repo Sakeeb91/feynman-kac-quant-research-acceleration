@@ -259,6 +259,21 @@ def test_run_batch_returns_sorted_results(tmp_path) -> None:
     assert scores == sorted(scores)
 
 
+def test_run_batch_records_have_convergence_health(tmp_path) -> None:
+    client = MockFKPinnClient()
+    artifacts_root = tmp_path / "artifacts"
+
+    rows = run_batch(
+        client=client,
+        scenarios=_scenarios(3),
+        batch_config=BatchConfig(),
+        artifacts_dir=artifacts_root,
+    )
+
+    assert rows
+    assert all("convergence_health" in row for row in rows)
+
+
 def test_run_batch_backward_compatible(monkeypatch, tmp_path) -> None:
     monkeypatch.chdir(tmp_path)
     client = MockFKPinnClient(checkpoint_mode="inline")
