@@ -25,8 +25,11 @@ from tenacity import stop_after_attempt
 from tenacity import wait_exponential_jitter
 
 from .async_client import AsyncFKPinnClient
+from .diagnostics.health import diagnose_convergence
 from .models import ReproducibilityInfo
 from .models import RunManifest
+from .models import ScoringConfig
+from .models import ScoringStrategy
 from .models import ScenarioStatus
 from .models import capture_environment
 from .models import capture_git_info
@@ -35,9 +38,11 @@ from .models import generate_scenario_run_id
 from .models import write_manifest
 from .orchestrator import BatchConfig
 from .orchestrator import Scenario
-from .reporting import compute_score
 from .retry import RETRY_DEFAULTS
 from .retry import is_retryable_error
+from .scoring.pareto import assign_pareto_scores
+from .scoring.registry import ScorerFn
+from .scoring.registry import get_scorer
 from .store import ArtifactStore
 from .store import MetadataStore
 
