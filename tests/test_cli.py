@@ -423,6 +423,39 @@ def test_cli_manifest_preflight_logs_all_errors(monkeypatch, tmp_path) -> None:
     assert called["anyio_run"] is False
 
 
+def test_resume_batch_invocation(monkeypatch, tmp_path) -> None:
+    captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
+    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(
+        app,
+        [
+            "resume-batch",
+            "BATCH123",
+            "--base-url",
+            "http://test:8000",
+            "--force",
+            "--concurrency",
+            "10",
+            "--max-retries",
+            "4",
+            "--db-path",
+            str(tmp_path / "exp.db"),
+            "--artifacts-dir",
+            str(tmp_path / "artifacts"),
+        ],
+    )
+
+    assert result.exit_code == 0
+    call = captured["callable"]
+    assert call.func == cli_module.resume_batch_async
+    assert call.keywords["batch_run_id"] == "BATCH123"
+    assert call.keywords["force"] is True
+    assert call.keywords["concurrency_limit"] == 10
+    assert call.keywords["max_retries"] == 4
+
+
 def test_log_level_debug_is_accepted() -> None:
     result = runner.invoke(app, ["--log-level", "DEBUG", "--help"])
     assert result.exit_code == 0
