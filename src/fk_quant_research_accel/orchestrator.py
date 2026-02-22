@@ -340,7 +340,8 @@ def run_batch(
                     "error_message": result.get("error"),
                     "checkpoint_path": None,
                 }
-                record["score"] = compute_score(record)
+                record["score"] = scorer(record)
+                record["convergence_health"] = diagnose_convergence(record).value
                 completed_at = datetime.now(timezone.utc).isoformat()
 
                 metadata_store.persist_scenario_result(
