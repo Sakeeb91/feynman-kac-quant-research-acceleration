@@ -255,20 +255,25 @@ def resume_batch_command(
     log.info("resume_batch_started", batch_run_id=batch_run_id, force=force)
 
     async_client = AsyncFKPinnClient(base_url=base_url, concurrency_limit=concurrency)
-    rows = anyio.run(
-        partial(
-            resume_batch_async,
-            client=async_client,
-            batch_run_id=batch_run_id,
-            force=force,
-            concurrency_limit=concurrency,
-            max_retries=max_retries,
-            poll_seconds=poll_seconds,
-            max_wait_seconds=max_wait_seconds,
-            db_path=db_path,
-            artifacts_dir=artifacts_dir,
+    try:
+        rows = anyio.run(
+            partial(
+                resume_batch_async,
+                client=async_client,
+                batch_run_id=batch_run_id,
+                force=force,
+                concurrency_limit=concurrency,
+                max_retries=max_retries,
+                poll_seconds=poll_seconds,
+                max_wait_seconds=max_wait_seconds,
+                db_path=db_path,
+                artifacts_dir=artifacts_dir,
+            )
         )
-    )
+    except ValueError as exc:
+        log.error("resume_batch_failed", batch_run_id=batch_run_id, error=str(exc))
+        raise typer.Exit(code=1) from exc
+
     _ = (log, rows, output)
 
 def main() -> None:
