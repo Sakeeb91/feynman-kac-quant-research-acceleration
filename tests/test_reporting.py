@@ -2,6 +2,7 @@ from fk_quant_research_accel.orchestrator import generate_black_scholes_scenario
 from fk_quant_research_accel.models.experiment import ScoringConfig
 from fk_quant_research_accel.models.enums import ScoringStrategy
 from fk_quant_research_accel.reporting import compute_score
+import pytest
 
 
 def test_generate_black_scholes_scenarios_cross_product() -> None:
@@ -28,7 +29,7 @@ def test_compute_score_non_completed_is_infinite() -> None:
 def test_compute_score_backward_compat() -> None:
     score = compute_score({"status": "completed", "train_loss": 0.05, "grad_norm": 1.0})
 
-    assert score == 0.06
+    assert score == pytest.approx(0.06)
 
 
 def test_compute_score_with_config() -> None:
