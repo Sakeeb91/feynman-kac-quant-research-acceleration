@@ -474,6 +474,14 @@ async def run_batch_async(
                 scorer=scorer,
             )
 
+        if effective_scoring_config.strategy == ScoringStrategy.PARETO_MULTI_OBJECTIVE:
+            pareto_scores = assign_pareto_scores(
+                records,
+                objectives=effective_scoring_config.pareto_objectives,
+            )
+            for record, score in zip(records, pareto_scores, strict=True):
+                record["score"] = score
+
         await _run_store(store.update_batch_status, batch_run_id, "completed", lock=store_lock)
         completed_count = sum(1 for row in records if row["status"] == ScenarioStatus.COMPLETED.value)
         failed_count = len(records) - completed_count
