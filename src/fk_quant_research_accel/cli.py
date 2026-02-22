@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import anyio
+from functools import partial
 from pathlib import Path
 from typing import Iterable
 
