@@ -1,6 +1,6 @@
 """Domain models for durable batch execution and persistence."""
 
-from .enums import LogLevel, OptionType, ScenarioStatus, ScoringStrategy
+from .enums import ConvergenceHealth, LogLevel, OptionType, ScenarioStatus, ScoringStrategy
 from .experiment import (
     BatchRunConfig,
     ExperimentManifest,
@@ -37,6 +37,7 @@ __all__ = [
     "LogLevel",
     "OptionType",
     "ScoringStrategy",
+    "ConvergenceHealth",
     "ScenarioGridConfig",
     "ModelSweepConfig",
     "BatchRunConfig",
