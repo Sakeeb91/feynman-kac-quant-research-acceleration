@@ -18,6 +18,7 @@ def _ok_rows() -> list[dict[str, Any]]:
     return [
         {
             "score": 0.1,
+            "convergence_health": "healthy",
             "dim": 5,
             "volatility": 0.2,
             "correlation": 0.0,
