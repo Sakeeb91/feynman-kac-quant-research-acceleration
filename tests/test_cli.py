@@ -223,6 +223,37 @@ def test_cli_manifest_preflight_fails_exits_1(monkeypatch, tmp_path) -> None:
     assert called["anyio_run"] is False
 
 
+def test_run_batch_manifest_preflight_still_works(monkeypatch, tmp_path) -> None:
+    called = {"anyio_run": False}
+
+    def fake_anyio_run(callable_obj):
+        called["anyio_run"] = True
+        del callable_obj
+        return _ok_rows()
+
+    manifest_path = _write_manifest(
+        tmp_path / "manifest.yaml",
+        {
+            "backend_url": "http://manifest-backend:9000",
+            "scenario_grid": {
+                "dimensions": [3],
+                "volatilities": [0.2],
+                "correlations": [[1.0, 0.5], [0.5, 1.0]],
+                "option_types": ["call"],
+            },
+        },
+    )
+
+    monkeypatch.setattr(cli_module.anyio, "run", fake_anyio_run)
+    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(app, ["run-batch", "--manifest", str(manifest_path)])
+
+    assert result.exit_code == 1
+    assert called["anyio_run"] is False
+
+
 def test_cli_backward_compat_flags(monkeypatch, tmp_path) -> None:
     captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
 
