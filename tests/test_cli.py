@@ -563,6 +563,57 @@ def test_resume_batch_nonexistent_batch(monkeypatch) -> None:
     assert "resume_batch_failed" in result.output
 
 
+def test_run_batch_invokes_render_leaderboard(monkeypatch, tmp_path) -> None:
+    _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
+    rendered = _patch_render_leaderboard_capture(monkeypatch)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(
+        app,
+        [
+            "run-batch",
+            "--base-url",
+            "http://legacy-backend:8000",
+            "--dimensions",
+            "5",
+            "--volatilities",
+            "0.2",
+            "--correlations",
+            "0.0",
+            "--option-types",
+            "call",
+            "--output",
+            str(tmp_path / "legacy.csv"),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert len(rendered["calls"]) == 1
+
+
+def test_resume_batch_invokes_render_leaderboard(monkeypatch, tmp_path) -> None:
+    _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
+    rendered = _patch_render_leaderboard_capture(monkeypatch)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(
+        app,
+        [
+            "resume-batch",
+            "BATCH123",
+            "--base-url",
+            "http://test:8000",
+            "--db-path",
+            str(tmp_path / "exp.db"),
+            "--artifacts-dir",
+            str(tmp_path / "artifacts"),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert len(rendered["calls"]) == 1
+
+
 def test_log_level_debug_is_accepted() -> None:
     result = runner.invoke(app, ["--log-level", "DEBUG", "--help"])
     assert result.exit_code == 0
