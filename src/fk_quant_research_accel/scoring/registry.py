@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 from collections.abc import Callable
 from typing import Any
 
@@ -30,4 +31,24 @@ def get_scorer(config: ScoringConfig) -> ScorerFn:
 
 
 def _import_custom_scorer(dotted_path: str) -> ScorerFn:
-    raise ValueError(f"Invalid custom scorer path: {dotted_path!r}")
+    if "." not in dotted_path:
+        raise ValueError(
+            f"Custom scorer path must be dotted module path like 'pkg.module.fn': {dotted_path!r}"
+        )
+    module_path, attr_name = dotted_path.rsplit(".", 1)
+    try:
+        module = importlib.import_module(module_path)
+    except Exception as exc:  # pragma: no cover - exact import error type depends on module
+        raise ValueError(f"Failed to import custom scorer module {module_path!r}: {exc}") from exc
+
+    try:
+        scorer = getattr(module, attr_name)
+    except AttributeError as exc:
+        raise ValueError(
+            f"Custom scorer attribute {attr_name!r} not found in module {module_path!r}"
+        ) from exc
+
+    if not callable(scorer):
+        raise ValueError(f"Custom scorer {dotted_path!r} is not callable")
+
+    return scorer
