@@ -383,3 +383,33 @@ def test_preflight_returns_preflight_error_objects() -> None:
     assert all(hasattr(error, "field") for error in errors)
     assert all(hasattr(error, "value") for error in errors)
     assert all(hasattr(error, "message") for error in errors)
+
+
+def test_preflight_custom_scorer_valid() -> None:
+    manifest = _valid_manifest().model_copy(
+        update={"scoring": {"custom_scorer": "math.fabs"}}
+    )
+
+    errors = validate_manifest(manifest)
+
+    assert not any(error.field == "scoring.custom_scorer" for error in errors)
+
+
+def test_preflight_custom_scorer_invalid_import() -> None:
+    manifest = _valid_manifest().model_copy(
+        update={"scoring": {"custom_scorer": "nonexistent.module.fn"}}
+    )
+
+    errors = validate_manifest(manifest)
+
+    assert any(error.field == "scoring.custom_scorer" for error in errors)
+
+
+def test_preflight_custom_scorer_not_callable() -> None:
+    manifest = _valid_manifest().model_copy(
+        update={"scoring": {"custom_scorer": "math.pi"}}
+    )
+
+    errors = validate_manifest(manifest)
+
+    assert any(error.field == "scoring.custom_scorer" for error in errors)
