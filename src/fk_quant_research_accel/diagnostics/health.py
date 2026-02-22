@@ -28,7 +28,42 @@ def _diagnose_from_history(
     loss_history: Sequence[Any],
     grad_history: Sequence[Any] | None = None,
 ) -> ConvergenceHealth:
-    raise NotImplementedError
+    values: list[float] = []
+    for value in loss_history:
+        if not _is_finite(value):
+            return ConvergenceHealth.EXPLODING
+        values.append(float(value))
+
+    if len(values) < 5:
+        return ConvergenceHealth.HEALTHY
+
+    if grad_history:
+        for grad in grad_history:
+            if not _is_finite(grad):
+                return ConvergenceHealth.EXPLODING
+            if abs(float(grad)) > GRAD_NORM_EXPLODING_THRESHOLD:
+                return ConvergenceHealth.EXPLODING
+
+    spread = max(values) - min(values)
+    if spread <= 1e-6:
+        return ConvergenceHealth.STAGNATING
+
+    first = values[0]
+    last = values[-1]
+    if abs(first) > 0 and abs(last - first) / abs(first) < 0.01:
+        return ConvergenceHealth.STAGNATING
+
+    average = mean(values)
+    if len(values) >= 2 and average != 0.0:
+        coefficient_of_variation = abs(stdev(values) / average)
+        if coefficient_of_variation > 0.8:
+            return ConvergenceHealth.OSCILLATING
+
+    downward_steps = sum(1 for left, right in zip(values, values[1:], strict=True) if right <= left)
+    if last <= first and downward_steps >= int(0.6 * (len(values) - 1)):
+        return ConvergenceHealth.HEALTHY
+
+    return ConvergenceHealth.OSCILLATING
 
 
 def _diagnose_from_final_state(
