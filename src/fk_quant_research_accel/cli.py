@@ -135,6 +135,7 @@ def run_batch_command(
     db_path: str | Path | None = None
     seed: int | None = None
     experiment_manifest_hash: str | None = None
+    backend_base_url: str | None = base_url
 
     if manifest is not None:
         try:
