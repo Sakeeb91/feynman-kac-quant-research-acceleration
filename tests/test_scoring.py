@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import math
+
+import pytest
+
 from fk_quant_research_accel.models import ConvergenceHealth
 from fk_quant_research_accel.models.experiment import ScoringConfig
+from fk_quant_research_accel.models.enums import ScoringStrategy
 from fk_quant_research_accel.models.result import CompletedScenarioResult
+from fk_quant_research_accel.scoring.registry import get_scorer
 
 
 def test_convergence_health_enum_values() -> None:
@@ -46,3 +52,33 @@ def test_completed_result_convergence_health_field() -> None:
     assert CompletedScenarioResult.model_validate({
         k: v for k, v in payload.items() if k != "convergence_health"
     }).convergence_health is None
+
+
+def test_get_scorer_loss_based() -> None:
+    scorer = get_scorer(ScoringConfig(strategy=ScoringStrategy.LOSS_BASED))
+
+    score = scorer({"status": "completed", "train_loss": 0.05, "grad_norm": 1.0})
+
+    assert score == pytest.approx(0.06)
+
+
+def test_get_scorer_loss_based_custom_weight() -> None:
+    scorer = get_scorer(
+        ScoringConfig(strategy=ScoringStrategy.LOSS_BASED, grad_norm_weight=0.1)
+    )
+
+    score = scorer({"status": "completed", "train_loss": 0.05, "grad_norm": 1.0})
+
+    assert score == pytest.approx(0.15)
+
+
+def test_get_scorer_loss_based_failed_status() -> None:
+    scorer = get_scorer(ScoringConfig(strategy=ScoringStrategy.LOSS_BASED))
+
+    assert scorer({"status": "failed"}) == float("inf")
+
+
+def test_get_scorer_loss_based_missing_loss() -> None:
+    scorer = get_scorer(ScoringConfig(strategy=ScoringStrategy.LOSS_BASED))
+
+    assert scorer({"status": "completed", "train_loss": None}) == float("inf")
