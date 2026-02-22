@@ -405,6 +405,7 @@ def test_preflight_custom_scorer_invalid_import() -> None:
     errors = validate_manifest(manifest)
 
     assert any(error.field == "scoring.custom_scorer" for error in errors)
+    assert any("Failed to import" in error.message for error in errors)
 
 
 def test_preflight_custom_scorer_not_callable() -> None:
@@ -416,3 +417,4 @@ def test_preflight_custom_scorer_not_callable() -> None:
     errors = validate_manifest(manifest)
 
     assert any(error.field == "scoring.custom_scorer" for error in errors)
+    assert any("not callable" in error.message for error in errors)
