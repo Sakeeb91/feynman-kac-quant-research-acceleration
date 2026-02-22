@@ -351,6 +351,7 @@ async def _execute_scenarios_concurrent(
     max_wait_seconds: float,
     concurrency_limit: int,
     max_retries: int,
+    scorer: ScorerFn,
 ) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     limiter = CapacityLimiter(concurrency_limit)
@@ -371,6 +372,7 @@ async def _execute_scenarios_concurrent(
                     max_wait_seconds=max_wait_seconds,
                     limiter=limiter,
                     max_retries=max_retries,
+                    scorer=scorer,
                     results=results,
                 )
             )
