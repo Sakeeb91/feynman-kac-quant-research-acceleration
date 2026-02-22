@@ -130,3 +130,35 @@ def test_get_scorer_unknown_strategy() -> None:
 
     with pytest.raises(ValueError):
         get_scorer(config)
+
+
+def test_get_scorer_custom_valid() -> None:
+    scorer = get_scorer(
+        ScoringConfig(
+            strategy=ScoringStrategy.LOSS_BASED,
+            custom_scorer="math.fabs",
+        )
+    )
+
+    assert callable(scorer)
+    assert scorer(-3.0) == pytest.approx(3.0)
+
+
+def test_get_scorer_custom_invalid_path() -> None:
+    with pytest.raises(ValueError):
+        get_scorer(
+            ScoringConfig(
+                strategy=ScoringStrategy.LOSS_BASED,
+                custom_scorer="nonexistent.module.fn",
+            )
+        )
+
+
+def test_get_scorer_custom_bad_format() -> None:
+    with pytest.raises(ValueError):
+        get_scorer(
+            ScoringConfig(
+                strategy=ScoringStrategy.LOSS_BASED,
+                custom_scorer="nodots",
+            )
+        )
