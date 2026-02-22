@@ -115,6 +115,7 @@ def run_batch_command(
     db_path: str | Path | None = None
     seed: int | None = None
     experiment_manifest_hash: str | None = None
+    effective_scoring_config = ScoringConfig()
     backend_base_url: str | None = base_url
 
     if manifest is not None:
@@ -154,6 +155,7 @@ def run_batch_command(
         artifacts_dir = experiment.output.artifacts_dir
         db_path = experiment.output.db_path
         seed = experiment.seed
+        effective_scoring_config = experiment.scoring
     else:
         assert base_url is not None
         backend_base_url = base_url
@@ -190,6 +192,7 @@ def run_batch_command(
             db_path=db_path,
             seed=seed,
             experiment_manifest_hash=experiment_manifest_hash,
+            scoring_config=effective_scoring_config,
         )
     )
     output_path = write_csv(rows, output)
