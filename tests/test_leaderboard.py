@@ -4,6 +4,9 @@ from io import StringIO
 
 from rich.console import Console
 
+from fk_quant_research_accel.leaderboard import _format_corr
+from fk_quant_research_accel.leaderboard import _format_health
+from fk_quant_research_accel.leaderboard import _format_score
 from fk_quant_research_accel.leaderboard import render_leaderboard
 
 
@@ -105,3 +108,21 @@ def test_render_leaderboard_n_limit() -> None:
 
     output = buffer.getvalue()
     assert "Top 3 of 5" in output
+
+
+def test_format_score_inf() -> None:
+    assert _format_score(float("inf")) == "inf"
+
+
+def test_format_score_none() -> None:
+    assert _format_score(None) == "--"
+
+
+def test_format_health_healthy() -> None:
+    text = _format_health("healthy")
+    assert text.plain == "healthy"
+    assert text.style == "green"
+
+
+def test_format_corr_matrix() -> None:
+    assert _format_corr([[1.0, 0.3], [0.3, 1.0]]) == "[2x2]"
