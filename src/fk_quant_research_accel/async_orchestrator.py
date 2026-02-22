@@ -507,7 +507,10 @@ async def resume_batch_async(
     force: bool = False,
     db_path: str | Path | None = None,
     artifacts_dir: str | Path = "artifacts",
+    scoring_config: ScoringConfig | None = None,
 ) -> list[dict[str, Any]]:
+    effective_scoring_config = scoring_config or ScoringConfig()
+    scorer = get_scorer(effective_scoring_config)
     log = structlog.get_logger().bind(batch_run_id=batch_run_id)
     artifact_store = ArtifactStore(artifacts_dir)
     effective_db_path = Path(db_path) if db_path is not None else artifact_store.root / "experiments.db"
@@ -556,6 +559,7 @@ async def resume_batch_async(
                 max_wait_seconds=max_wait_seconds,
                 concurrency_limit=concurrency_limit,
                 max_retries=max_retries,
+                scorer=scorer,
             )
 
         await _run_store(store.update_batch_status, batch_run_id, "completed", lock=store_lock)
