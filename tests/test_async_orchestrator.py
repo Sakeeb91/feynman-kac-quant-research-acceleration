@@ -224,6 +224,7 @@ async def test_single_failure_does_not_cancel_siblings(tmp_path) -> None:
     assert statuses.count("failed") == 1
     failed_row = next(row for row in rows if row["status"] == "failed")
     assert "bad scenario" in str(failed_row["error_message"])
+    assert failed_row["convergence_health"] == "exploding"
 
     store = MetadataStore(artifacts_dir / "experiments.db")
     try:
