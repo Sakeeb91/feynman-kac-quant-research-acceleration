@@ -255,7 +255,7 @@ async def _submit_and_poll_scenario(
         "error_message": result_item.get("error"),
         "checkpoint_path": None,
     }
-    record["score"] = compute_score(record)
+    record["score"] = scorer(record)
     completed_at = _now_iso()
 
     checkpoint_path = await _fetch_checkpoint(
