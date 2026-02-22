@@ -15,10 +15,13 @@ import requests
 import structlog
 
 from .client import FKPinnClient
+from .diagnostics.health import diagnose_convergence
 from .models import (
     ExperimentManifest,
     ReproducibilityInfo,
     RunManifest,
+    ScoringConfig,
+    ScoringStrategy,
     ScenarioStatus,
     capture_environment,
     capture_git_info,
@@ -26,7 +29,8 @@ from .models import (
     generate_scenario_run_id,
     write_manifest,
 )
-from .reporting import compute_score
+from .scoring.pareto import assign_pareto_scores
+from .scoring.registry import get_scorer
 from .store import ArtifactStore, MetadataStore
 
 
