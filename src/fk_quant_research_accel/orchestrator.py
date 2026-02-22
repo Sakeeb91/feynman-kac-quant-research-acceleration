@@ -221,8 +221,11 @@ def run_batch(
     db_path: str | Path | None = None,
     seed: int | None = None,
     experiment_manifest_hash: str | None = None,
+    scoring_config: ScoringConfig | None = None,
 ) -> list[dict[str, Any]]:
     """Submit all scenarios and incrementally persist terminal results."""
+    effective_scoring_config = scoring_config or ScoringConfig()
+    scorer = get_scorer(effective_scoring_config)
     batch_run_id = str(generate_batch_run_id())
     log = structlog.get_logger().bind(batch_run_id=batch_run_id)
 
