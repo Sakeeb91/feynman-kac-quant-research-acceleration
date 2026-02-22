@@ -155,7 +155,7 @@ def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
         },
     )
 
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(
@@ -187,7 +187,7 @@ def test_run_batch_manifest_uses_async(monkeypatch, tmp_path) -> None:
         },
     )
 
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(
@@ -232,7 +232,7 @@ def test_cli_manifest_preflight_fails_exits_1(monkeypatch, tmp_path) -> None:
     )
 
     monkeypatch.setattr(cli_module.anyio, "run", fake_anyio_run)
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(app, ["run-batch", "--manifest", str(manifest_path)])
@@ -263,7 +263,7 @@ def test_run_batch_manifest_preflight_still_works(monkeypatch, tmp_path) -> None
     )
 
     monkeypatch.setattr(cli_module.anyio, "run", fake_anyio_run)
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(app, ["run-batch", "--manifest", str(manifest_path)])
@@ -275,7 +275,7 @@ def test_run_batch_manifest_preflight_still_works(monkeypatch, tmp_path) -> None
 def test_cli_backward_compat_flags(monkeypatch, tmp_path) -> None:
     captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
 
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(
@@ -305,7 +305,7 @@ def test_cli_backward_compat_flags(monkeypatch, tmp_path) -> None:
 
 def test_run_batch_legacy_flags_uses_async(monkeypatch, tmp_path) -> None:
     captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(
@@ -344,7 +344,7 @@ def test_cli_base_url_required_without_manifest() -> None:
 
 def test_run_batch_default_concurrency(monkeypatch, tmp_path) -> None:
     captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(
