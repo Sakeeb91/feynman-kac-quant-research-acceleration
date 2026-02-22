@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Durable Storage Foundation** - Run identity, artifact directories, checkpoint persistence, SQLite metadata, crash-safe writes, structured logging
 - [x] **Phase 2: YAML Manifests, Validation, and Domain Models** - Config-driven experiment definition with validated Pydantic schemas and pre-flight scenario validation
-- [ ] **Phase 3: Concurrent Durable Execution** - Async batch execution with concurrency, retry, resume, and unattended SLO
+- [x] **Phase 3: Concurrent Durable Execution** - Async batch execution with concurrency, retry, resume, and unattended SLO
 - [ ] **Phase 4: Scoring, Diagnostics, and Leaderboards** - Pluggable scoring, convergence health detection, ranked leaderboard output
 - [ ] **Phase 5: Run Analysis CLI** - Query, compare, and inspect past experiment runs
 - [ ] **Phase 6: Extensibility** - Problem-type extensibility via ProblemSpec protocol
@@ -70,9 +70,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Dependencies, schema v2 migration, async HTTP client, and retry configuration
-- [ ] 03-02-PLAN.md -- Async orchestrator with concurrent execution, retry, fault isolation, and resume
-- [ ] 03-03-PLAN.md -- CLI wiring for async run-batch and resume-batch commands
+- [x] 03-01-PLAN.md -- Dependencies, schema v2 migration, async HTTP client, and retry configuration
+- [x] 03-02-PLAN.md -- Async orchestrator with concurrent execution, retry, fault isolation, and resume
+- [x] 03-03-PLAN.md -- CLI wiring for async run-batch and resume-batch commands
 
 ### Phase 4: Scoring, Diagnostics, and Leaderboards
 **Goal**: Ranking reflects actual convergence quality with pluggable scoring, automated health diagnostics, and leaderboards that surface both rank and convergence health
@@ -136,7 +136,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 |-------|----------------|--------|-----------|
 | 1. Durable Storage Foundation | 3/3 | Executed (UAT in progress) | 2026-02-19 |
 | 2. YAML Manifests, Validation, and Domain Models | 4/4 | Complete (gaps closed) | 2026-02-21 |
-| 3. Concurrent Durable Execution | 0/3 | Planned | - |
+| 3. Concurrent Durable Execution | 3/3 | Complete (UAT passed) | 2026-02-22 |
 | 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Not started | - |
 | 5. Run Analysis CLI | 0/1 | Not started | - |
 | 6. Extensibility | 0/2 | Not started | - |
@@ -144,4 +144,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 ---
 *Roadmap created: 2026-02-19*
-*Last updated: 2026-02-21 (Phase 3 planned: 3 plans in 3 waves -- deps/schema, async orchestrator, CLI wiring)*
+*Last updated: 2026-02-22 (Phase 3 complete: UAT 7/7 passed, 152 tests, ready for Phase 4)*

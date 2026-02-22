@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** A researcher can define a 50-200 scenario batch, walk away, and come back to a ranked leaderboard with full reproducibility metadata and a deployable model package for the winner.
-**Current focus:** Phase 2 fully complete (including gap closure); ready to begin Phase 3 execution planning
+**Current focus:** Phase 3 fully complete (UAT passed, 0 issues); ready to begin Phase 4 planning
 
 ## Current Position
 
-Phase: 2 of 7 (YAML Manifests, Validation, and Domain Models)
-Plan: 4 of 4 in current phase
-Status: Executed (phase complete, gap closure done)
-Last activity: 2026-02-21 -- Executed 02-04-PLAN.md (basket OptionType enum gap closure)
+Phase: 3 of 7 (Concurrent Durable Execution)
+Plan: 3 of 3 in current phase
+Status: Complete (UAT passed: 7/7, 0 issues)
+Last activity: 2026-02-22 -- Phase 3 UAT complete (152 tests passing, all 7 UAT checks green)
 
-Progress: [█████░░░░░] 43%
+Progress: [██████░░░░] 57%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 10
 - Average duration: --
 - Total execution time: --
 
@@ -29,9 +29,10 @@ Progress: [█████░░░░░] 43%
 |-------|-------|-------|----------|
 | 1     | 3/3   | --    | --       |
 | 2     | 4/4   | --    | --       |
+| 3     | 3/3   | --    | --       |
 
 **Recent Trend:**
-- Last 5 plans: 01-03, 02-01, 02-02, 02-03, 02-04
+- Last 5 plans: 02-03, 02-04, 03-01, 03-02, 03-03
 - Trend: steady execution
 
 *Updated after each plan completion*
@@ -58,6 +59,11 @@ Recent decisions affecting current work:
 - [Phase 2 Plan 3]: Scenario generation now expands Cartesian product across both PDE grid axes and model sweep axes
 - [Phase 2 Plan 3]: Source manifest content hash is logged and persisted in run artifact manifest for reproducibility traceability
 - [Phase 2 Plan 4]: Keep model_construct for error-aggregation tests needing intentionally invalid Pydantic data; use model_validate only for pure basket-path tests
+- [Phase 3 Plan 1]: Use check_same_thread=False for MetadataStore so it can be called from AnyIO worker threads
+- [Phase 3 Plan 1]: Classify timeout/connect/protocol and 5xx as retryable; 4xx as non-retryable
+- [Phase 3 Plan 2]: Wrap each scenario task in try/except Exception to prevent AnyIO task-group sibling cancellation
+- [Phase 3 Plan 2]: Serialize MetadataStore calls with async lock while offloading to worker threads
+- [Phase 3 Plan 3]: Bridge Typer sync commands to async orchestrator via anyio.run(partial(...))
 
 ### Pending Todos
 
@@ -73,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Completed 02-04-PLAN.md (basket OptionType gap closure, 115 tests passing)
+Last session: 2026-02-22
+Stopped at: Phase 3 UAT complete (7/7 passed, 152 tests, 0 issues)
 Resume file: .planning/ROADMAP.md
