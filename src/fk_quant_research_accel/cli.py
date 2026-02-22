@@ -190,6 +190,12 @@ def run_batch_command(
             learning_rate=learning_rate,
         )
 
+    assert backend_base_url is not None
+    async_client = AsyncFKPinnClient(
+        base_url=backend_base_url,
+        concurrency_limit=concurrency,
+    )
+
     rows = run_batch(
         client=client,
         scenarios=scenarios,
