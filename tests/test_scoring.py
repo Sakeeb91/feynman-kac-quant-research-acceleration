@@ -8,6 +8,11 @@ from fk_quant_research_accel.models import ConvergenceHealth
 from fk_quant_research_accel.models.experiment import ScoringConfig
 from fk_quant_research_accel.models.enums import ScoringStrategy
 from fk_quant_research_accel.models.result import CompletedScenarioResult
+from fk_quant_research_accel.scoring.pareto import (
+    assign_pareto_scores,
+    dominates,
+    non_dominated_sort,
+)
 from fk_quant_research_accel.scoring.registry import get_scorer
 
 
@@ -162,3 +167,53 @@ def test_get_scorer_custom_bad_format() -> None:
                 custom_scorer="nodots",
             )
         )
+
+
+def test_dominates_true() -> None:
+    assert dominates([1.0, 1.0], [2.0, 2.0]) is True
+
+
+def test_dominates_false_equal() -> None:
+    assert dominates([1.0, 1.0], [1.0, 1.0]) is False
+
+
+def test_dominates_false_partial() -> None:
+    assert dominates([1.0, 3.0], [2.0, 2.0]) is False
+
+
+def test_non_dominated_sort_simple() -> None:
+    records = [
+        {"name": "a", "train_loss": 1.0, "grad_norm": 1.0},
+        {"name": "b", "train_loss": 2.0, "grad_norm": 2.0},
+        {"name": "c", "train_loss": 0.5, "grad_norm": 3.0},
+    ]
+
+    fronts = non_dominated_sort(records, objectives=["train_loss", "grad_norm"])
+
+    assert set(fronts[0]) == {0, 2}
+    assert fronts[1] == [1]
+
+
+def test_non_dominated_sort_with_invalid() -> None:
+    records = [
+        {"name": "a", "train_loss": 1.0, "grad_norm": 1.0},
+        {"name": "b", "train_loss": None, "grad_norm": 2.0},
+        {"name": "c", "train_loss": 0.8, "grad_norm": 1.4},
+    ]
+
+    fronts = non_dominated_sort(records, objectives=["train_loss", "grad_norm"])
+
+    assert 1 in fronts[-1]
+
+
+def test_assign_pareto_scores() -> None:
+    records = [
+        {"name": "a", "train_loss": 1.0, "grad_norm": 1.0},
+        {"name": "b", "train_loss": 2.0, "grad_norm": 2.0},
+        {"name": "c", "train_loss": 0.5, "grad_norm": 3.0},
+    ]
+
+    scores = assign_pareto_scores(records, objectives=["train_loss", "grad_norm"])
+
+    assert scores[0] < scores[1]
+    assert scores[2] < scores[1]
