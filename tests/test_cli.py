@@ -75,6 +75,8 @@ def test_run_batch_help_includes_expected_flags() -> None:
         "--learning-rate",
         "--poll-seconds",
         "--max-wait-seconds",
+        "--concurrency",
+        "--max-retries",
         "--output",
         "--manifest",
     ]:
