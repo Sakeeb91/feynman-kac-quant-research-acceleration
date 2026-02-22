@@ -62,3 +62,55 @@ def test_diagnose_healthy_no_metrics() -> None:
     health = diagnose_convergence({"status": "completed"})
 
     assert health == ConvergenceHealth.HEALTHY
+
+
+def test_diagnose_from_history_exploding() -> None:
+    health = diagnose_convergence(
+        {
+            "status": "completed",
+            "extra_metrics": {
+                "loss_history": [0.5, 0.3, float("nan"), 0.1, 0.05],
+            },
+        }
+    )
+
+    assert health == ConvergenceHealth.EXPLODING
+
+
+def test_diagnose_from_history_stagnating() -> None:
+    health = diagnose_convergence(
+        {
+            "status": "completed",
+            "extra_metrics": {
+                "loss_history": [1.0] * 20,
+            },
+        }
+    )
+
+    assert health == ConvergenceHealth.STAGNATING
+
+
+def test_diagnose_from_history_oscillating() -> None:
+    health = diagnose_convergence(
+        {
+            "status": "completed",
+            "extra_metrics": {
+                "loss_history": [0.1, 1.0, 0.1, 1.0, 0.1, 1.0, 0.1, 1.0, 0.1, 1.0],
+            },
+        }
+    )
+
+    assert health == ConvergenceHealth.OSCILLATING
+
+
+def test_diagnose_from_history_healthy() -> None:
+    health = diagnose_convergence(
+        {
+            "status": "completed",
+            "extra_metrics": {
+                "loss_history": [1.0, 0.5, 0.3, 0.2, 0.15, 0.1, 0.08, 0.06, 0.05, 0.04],
+            },
+        }
+    )
+
+    assert health == ConvergenceHealth.HEALTHY
