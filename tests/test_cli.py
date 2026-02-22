@@ -58,6 +58,8 @@ def test_help_includes_program_name_and_log_level() -> None:
     assert result.exit_code == 0
     assert "fk-research" in result.stdout
     assert "--log-level" in result.stdout
+    assert "run-batch" in result.stdout
+    assert "resume-batch" in result.stdout
 
 
 def test_run_batch_help_includes_expected_flags() -> None:
