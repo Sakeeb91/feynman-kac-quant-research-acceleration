@@ -116,6 +116,13 @@ def run_batch_command(
         max=100,
         help="Max concurrent scenario executions",
     ),
+    max_retries: int = typer.Option(
+        3,
+        "--max-retries",
+        min=0,
+        max=10,
+        help="Max retry attempts per transient HTTP error",
+    ),
     output: str = typer.Option("artifacts/batch_results.csv", "--output"),
 ) -> None:
     log = structlog.get_logger()
