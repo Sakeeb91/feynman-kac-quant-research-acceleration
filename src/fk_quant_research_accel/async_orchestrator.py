@@ -298,6 +298,7 @@ async def _execute_scenario_safe(
     max_wait_seconds: float,
     limiter: CapacityLimiter,
     max_retries: int,
+    scorer: ScorerFn,
     results: list[dict[str, Any]],
 ) -> None:
     log = structlog.get_logger().bind(scenario_run_id=scenario_run_id)
@@ -316,6 +317,7 @@ async def _execute_scenario_safe(
                 poll_seconds=poll_seconds,
                 max_wait_seconds=max_wait_seconds,
                 max_retries=max_retries,
+                scorer=scorer,
             )
             simulation_id = str(record["simulation_id"])
         except Exception as exc:  # noqa: BLE001
