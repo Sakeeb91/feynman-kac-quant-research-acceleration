@@ -23,6 +23,22 @@ def register_scorer(strategy: ScoringStrategy) -> Callable[[ScorerFn], ScorerFn]
 
 
 def get_scorer(config: ScoringConfig) -> ScorerFn:
+    if config.custom_scorer:
+        return _import_custom_scorer(config.custom_scorer)
+
+    # Ensure decorators in scorers.py run before registry lookup.
+    from fk_quant_research_accel.scoring import scorers as _builtin_scorers
+
+    del _builtin_scorers
+
+    if config.strategy == ScoringStrategy.LOSS_BASED:
+        from fk_quant_research_accel.scoring.scorers import score_loss_based
+
+        def configured_loss_scorer(record: dict[str, Any]) -> float:
+            return score_loss_based(record, grad_norm_weight=config.grad_norm_weight)
+
+        return configured_loss_scorer
+
     strategy = config.strategy
     try:
         return _SCORER_REGISTRY[strategy]
