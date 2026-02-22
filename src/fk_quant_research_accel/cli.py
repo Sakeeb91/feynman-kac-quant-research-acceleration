@@ -196,7 +196,7 @@ def run_batch_command(
         )
     )
     output_path = write_csv(rows, output)
-    _log_top(rows)
+    render_leaderboard(rows)
     log.info("batch_complete", rows=len(rows), output=str(output_path))
 
 
@@ -260,7 +260,7 @@ def resume_batch_command(
         raise typer.Exit(code=1) from exc
 
     output_path = write_csv(rows, output)
-    _log_top(rows)
+    render_leaderboard(rows)
     log.info("resume_batch_complete", rows=len(rows), output=str(output_path))
 
 def main() -> None:
