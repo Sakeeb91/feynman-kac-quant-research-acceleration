@@ -373,7 +373,7 @@ def test_run_batch_default_concurrency(monkeypatch, tmp_path) -> None:
 
 def test_run_batch_default_max_retries(monkeypatch, tmp_path) -> None:
     captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(
@@ -416,7 +416,7 @@ def test_cli_manifest_overrides_legacy_flags(monkeypatch, tmp_path) -> None:
         },
     )
 
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(
@@ -454,7 +454,7 @@ def test_cli_manifest_load_failure_exits_1(monkeypatch, tmp_path) -> None:
     manifest_path.write_text("backend_url: [unclosed", encoding="utf-8")
 
     monkeypatch.setattr(cli_module.anyio, "run", fake_anyio_run)
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(app, ["run-batch", "--manifest", str(manifest_path)])
@@ -485,7 +485,7 @@ def test_cli_manifest_preflight_logs_all_errors(monkeypatch, tmp_path) -> None:
     )
 
     monkeypatch.setattr(cli_module.anyio, "run", fake_anyio_run)
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
     monkeypatch.setattr(
         cli_module,
@@ -505,7 +505,7 @@ def test_cli_manifest_preflight_logs_all_errors(monkeypatch, tmp_path) -> None:
 
 def test_resume_batch_invocation(monkeypatch, tmp_path) -> None:
     captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(
@@ -542,7 +542,7 @@ def test_resume_batch_nonexistent_batch(monkeypatch) -> None:
         raise ValueError("Batch not found")
 
     monkeypatch.setattr(cli_module.anyio, "run", fake_anyio_run)
-    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    _patch_render_leaderboard_capture(monkeypatch)
     monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
 
     result = runner.invoke(
