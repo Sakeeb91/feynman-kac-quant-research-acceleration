@@ -90,6 +90,24 @@ def test_cli_manifest_option_exists_in_help() -> None:
     assert "--manifest" in result.stdout
 
 
+def test_resume_batch_help() -> None:
+    result = runner.invoke(app, ["resume-batch", "--help"])
+
+    assert result.exit_code == 0
+    for flag in [
+        "--base-url",
+        "--force",
+        "--concurrency",
+        "--max-retries",
+        "--poll-seconds",
+        "--max-wait-seconds",
+        "--db-path",
+        "--artifacts-dir",
+        "--output",
+    ]:
+        assert flag in result.stdout
+
+
 def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
     captured: dict[str, object] = {}
 
