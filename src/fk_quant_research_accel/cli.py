@@ -274,7 +274,9 @@ def resume_batch_command(
         log.error("resume_batch_failed", batch_run_id=batch_run_id, error=str(exc))
         raise typer.Exit(code=1) from exc
 
-    _ = (log, rows, output)
+    output_path = write_csv(rows, output)
+    _log_top(rows)
+    log.info("resume_batch_complete", rows=len(rows), output=str(output_path))
 
 def main() -> None:
     app()
