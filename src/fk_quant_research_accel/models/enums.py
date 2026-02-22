@@ -35,3 +35,10 @@ class ScoringStrategy(str, Enum):
     LOSS_BASED = "loss_based"
     CONVERGENCE_RATE = "convergence_rate"
     PARETO_MULTI_OBJECTIVE = "pareto_multi_objective"
+
+
+class ConvergenceHealth(str, Enum):
+    HEALTHY = "healthy"
+    OSCILLATING = "oscillating"
+    STAGNATING = "stagnating"
+    EXPLODING = "exploding"
