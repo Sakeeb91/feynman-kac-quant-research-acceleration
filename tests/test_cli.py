@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from pathlib import Path
 
 import yaml
@@ -13,9 +14,38 @@ from fk_quant_research_accel.validation import PreflightError
 runner = CliRunner()
 
 
-class FakeClient:
-    def __init__(self, base_url: str) -> None:
-        self.base_url = base_url
+def _ok_rows() -> list[dict[str, Any]]:
+    return [
+        {
+            "score": 0.1,
+            "dim": 5,
+            "volatility": 0.2,
+            "correlation": 0.0,
+            "option_type": "call",
+            "status": "completed",
+            "train_loss": 0.1,
+            "progress": 1.0,
+            "val_loss": None,
+            "lr": 1e-3,
+            "grad_norm": 0.1,
+            "error_message": None,
+            "checkpoint_path": None,
+            "simulation_id": "sim-1",
+        }
+    ]
+
+
+def _patch_anyio_run_capture(monkeypatch, *, returned_rows: list[dict[str, Any]] | None = None):
+    captured: dict[str, Any] = {}
+
+    def fake_anyio_run(callable_obj):
+        captured["callable"] = callable_obj
+        if returned_rows is not None:
+            return returned_rows
+        return _ok_rows()
+
+    monkeypatch.setattr(cli_module.anyio, "run", fake_anyio_run)
+    return captured
 
 
 def _write_manifest(path: Path, payload: dict[str, object]) -> Path:
