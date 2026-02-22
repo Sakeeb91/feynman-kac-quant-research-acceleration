@@ -6,22 +6,20 @@ import csv
 from pathlib import Path
 from typing import Any
 
+from fk_quant_research_accel.models.experiment import ScoringConfig
+from fk_quant_research_accel.scoring.registry import get_scorer
 
-def compute_score(record: dict[str, Any]) -> float:
+
+def compute_score(
+    record: dict[str, Any],
+    scoring_config: ScoringConfig | None = None,
+) -> float:
     """
     Lower is better. Penalize missing values and unstable gradients.
     """
-    train_loss = record.get("train_loss")
-    grad_norm = record.get("grad_norm")
-    status = record.get("status")
-
-    if status != "completed":
-        return float("inf")
-    if train_loss is None:
-        return float("inf")
-
-    grad_penalty = 0.0 if grad_norm is None else abs(float(grad_norm)) * 0.01
-    return float(train_loss) + grad_penalty
+    config = scoring_config or ScoringConfig()
+    scorer = get_scorer(config)
+    return scorer(record)
 
 
 def write_csv(records: list[dict[str, Any]], output_path: str | Path) -> Path:
