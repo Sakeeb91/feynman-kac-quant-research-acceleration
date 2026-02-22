@@ -485,6 +485,7 @@ async def test_result_record_format(tmp_path) -> None:
         "lr",
         "grad_norm",
         "score",
+        "convergence_health",
         "error_message",
         "checkpoint_path",
     }
