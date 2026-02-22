@@ -53,18 +53,16 @@ def _diagnose_from_history(
     if abs(first) > 0 and abs(last - first) / abs(first) < 0.01:
         return ConvergenceHealth.STAGNATING
 
-    downward_steps = sum(1 for left, right in zip(values, values[1:], strict=True) if right <= left)
+    downward_steps = sum(1 for left, right in zip(values, values[1:]) if right <= left)
     if last <= first and downward_steps >= int(0.6 * (len(values) - 1)):
         return ConvergenceHealth.HEALTHY
 
     average = mean(values)
     if len(values) >= 2 and average != 0.0:
         coefficient_of_variation = abs(stdev(values) / average)
-        diffs = [right - left for left, right in zip(values, values[1:], strict=True)]
+        diffs = [right - left for left, right in zip(values, values[1:])]
         signs = [1 if diff > 0 else -1 for diff in diffs if diff != 0]
-        direction_changes = sum(
-            1 for prev, curr in zip(signs, signs[1:], strict=True) if prev != curr
-        )
+        direction_changes = sum(1 for prev, curr in zip(signs, signs[1:]) if prev != curr)
         oscillation_threshold = max(2, len(values) // 4)
         if coefficient_of_variation > 0.8 and direction_changes >= oscillation_threshold:
             return ConvergenceHealth.OSCILLATING
