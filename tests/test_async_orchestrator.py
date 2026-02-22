@@ -133,6 +133,7 @@ async def test_run_batch_async_basic(tmp_path) -> None:
 
     assert len(rows) == 3
     assert all(row["status"] == "completed" for row in rows)
+    assert all("convergence_health" in row for row in rows)
     scores = [row["score"] for row in rows]
     assert scores == sorted(scores)
 
