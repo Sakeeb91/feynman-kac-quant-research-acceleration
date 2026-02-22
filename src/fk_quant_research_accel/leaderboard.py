@@ -59,8 +59,34 @@ def render_leaderboard(
     title: str = "Leaderboard",
     console: Console | None = None,
 ) -> None:
-    _ = (records, n, title)
     if console is None:
         console = Console(stderr=True)
-    table = Table(title=title)
+
+    table = Table(
+        title=title,
+        caption=f"Top {min(n, len(records))} of {len(records)} scenarios",
+    )
+    table.add_column("Rank", justify="right", style="bold", width=6)
+    table.add_column("Score", justify="right", style="cyan", width=12)
+    table.add_column("Health", justify="center", width=12)
+    table.add_column("Dim", justify="right", width=5)
+    table.add_column("Vol", justify="right", width=8)
+    table.add_column("Corr", justify="right", width=8)
+    table.add_column("Type", width=12)
+    table.add_column("Loss", justify="right", width=12)
+    table.add_column("Status", justify="center", width=10)
+
+    for rank, row in enumerate(records[:n], start=1):
+        table.add_row(
+            str(rank),
+            _format_score(row.get("score")),
+            _format_health(row.get("convergence_health")),
+            str(row.get("dim", "--")),
+            _format_score(row.get("volatility")),
+            _format_corr(row.get("correlation")),
+            str(row.get("option_type", "--")),
+            _format_score(row.get("train_loss")),
+            str(row.get("status", "--")),
+        )
+
     console.print(table)
