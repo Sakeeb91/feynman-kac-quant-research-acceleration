@@ -456,6 +456,29 @@ def test_resume_batch_invocation(monkeypatch, tmp_path) -> None:
     assert call.keywords["max_retries"] == 4
 
 
+def test_resume_batch_nonexistent_batch(monkeypatch) -> None:
+    def fake_anyio_run(callable_obj):
+        del callable_obj
+        raise ValueError("Batch not found")
+
+    monkeypatch.setattr(cli_module.anyio, "run", fake_anyio_run)
+    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(
+        app,
+        [
+            "resume-batch",
+            "NONEXISTENT",
+            "--base-url",
+            "http://test:8000",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "resume_batch_failed" in result.output
+
+
 def test_log_level_debug_is_accepted() -> None:
     result = runner.invoke(app, ["--log-level", "DEBUG", "--help"])
     assert result.exit_code == 0
