@@ -168,7 +168,7 @@ def run_batch_command(
             hash=experiment_manifest_hash,
         )
         config = _batch_config_from_manifest(experiment)
-        client = FKPinnClient(base_url=experiment.backend_url)
+        backend_base_url = experiment.backend_url
         effective_poll_seconds = experiment.batch_config.poll_seconds
         effective_max_wait_seconds = experiment.batch_config.max_wait_seconds
         artifacts_dir = experiment.output.artifacts_dir
