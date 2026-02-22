@@ -5,14 +5,14 @@ from __future__ import annotations
 import anyio
 from functools import partial
 from pathlib import Path
-from typing import Iterable
 
 import structlog
 import typer
 
 from .async_client import AsyncFKPinnClient
 from .logging import configure_logging
-from .models import ExperimentManifest, LogLevel, content_hash, load_manifest
+from .leaderboard import render_leaderboard
+from .models import ExperimentManifest, LogLevel, ScoringConfig, content_hash, load_manifest
 from .async_orchestrator import resume_batch_async, run_batch_async
 from .orchestrator import (
     BatchConfig,
@@ -35,24 +35,6 @@ def _parse_float_list(raw: str) -> list[float]:
 
 def _parse_str_list(raw: str) -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
-
-
-def _log_top(rows: Iterable[dict], n: int = 10) -> None:
-    log = structlog.get_logger()
-    for idx, row in enumerate(rows):
-        if idx >= n:
-            break
-        log.info(
-            "top_scenario",
-            rank=idx + 1,
-            score=row["score"],
-            dim=row["dim"],
-            volatility=row["volatility"],
-            correlation=row["correlation"],
-            option_type=row["option_type"],
-            status=row["status"],
-            train_loss=row["train_loss"],
-        )
 
 
 def _batch_config_from_manifest(experiment: ExperimentManifest) -> BatchConfig:
