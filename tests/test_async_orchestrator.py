@@ -14,6 +14,8 @@ from fk_quant_research_accel.async_orchestrator import resume_batch_async
 from fk_quant_research_accel.async_orchestrator import run_batch_async
 from fk_quant_research_accel.models import generate_batch_run_id
 from fk_quant_research_accel.models import generate_scenario_run_id
+from fk_quant_research_accel.models import ScoringConfig
+from fk_quant_research_accel.models import ScoringStrategy
 from fk_quant_research_accel.orchestrator import BatchConfig
 from fk_quant_research_accel.orchestrator import Scenario
 from fk_quant_research_accel.store.metadata import MetadataStore
@@ -52,6 +54,42 @@ class MockAsyncFKPinnClient:
         return {
             "item": {
                 "metrics": {"loss": 0.01, "grad_norm": 0.1, "lr": 1e-3},
+                "progress": 1.0,
+            }
+        }
+
+
+class _ParetoClient(MockAsyncFKPinnClient):
+    def __init__(self) -> None:
+        super().__init__()
+        self._dim_by_sim: dict[str, int] = {}
+
+    async def create_simulation(
+        self,
+        problem_id: str,
+        parameters: dict[str, Any],
+        training_config: dict[str, Any],
+    ) -> dict[str, Any]:
+        del problem_id, training_config
+        simulation_id = f"sim-{uuid4()}"
+        self._dim_by_sim[simulation_id] = int(parameters["dim"])
+        return {"id": simulation_id}
+
+    async def get_result(self, simulation_id: str) -> dict[str, Any]:
+        dim = self._dim_by_sim[simulation_id]
+        if dim == 5:
+            loss = 0.2
+            grad_norm = 0.1
+        elif dim == 6:
+            loss = 0.1
+            grad_norm = 0.2
+        else:
+            loss = 0.3
+            grad_norm = 0.3
+
+        return {
+            "item": {
+                "metrics": {"loss": loss, "grad_norm": grad_norm, "lr": 1e-3},
                 "progress": 1.0,
             }
         }
@@ -451,3 +489,21 @@ async def test_result_record_format(tmp_path) -> None:
         "checkpoint_path",
     }
     assert expected_keys.issubset(rows[0].keys())
+
+
+@pytest.mark.anyio
+async def test_run_batch_async_pareto_rescoring(tmp_path) -> None:
+    rows = await run_batch_async(
+        client=_ParetoClient(),
+        scenarios=_scenarios(3),
+        batch_config=BatchConfig(),
+        poll_seconds=0.0,
+        max_wait_seconds=2.0,
+        artifacts_dir=tmp_path / "artifacts",
+        db_path=tmp_path / "artifacts" / "experiments.db",
+        scoring_config=ScoringConfig(strategy=ScoringStrategy.PARETO_MULTI_OBJECTIVE),
+    )
+
+    by_dim = {row["dim"]: row["score"] for row in rows}
+    assert by_dim[5] < by_dim[7]
+    assert by_dim[6] < by_dim[7]
