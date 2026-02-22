@@ -169,6 +169,7 @@ def _build_failure_record(
         "lr": None,
         "grad_norm": None,
         "score": float("inf"),
+        "convergence_health": "exploding",
         "error_message": error_message,
         "checkpoint_path": None,
     }
