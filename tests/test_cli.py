@@ -353,6 +353,35 @@ def test_run_batch_default_concurrency(monkeypatch, tmp_path) -> None:
     assert call.keywords["concurrency_limit"] == 20
 
 
+def test_run_batch_default_max_retries(monkeypatch, tmp_path) -> None:
+    captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
+    monkeypatch.setattr(cli_module, "_log_top", lambda rows, n=10: None)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(
+        app,
+        [
+            "run-batch",
+            "--base-url",
+            "http://legacy-backend:8000",
+            "--dimensions",
+            "5",
+            "--volatilities",
+            "0.2",
+            "--correlations",
+            "0.0",
+            "--option-types",
+            "call",
+            "--output",
+            str(tmp_path / "default-retries.csv"),
+        ],
+    )
+
+    assert result.exit_code == 0
+    call = captured["callable"]
+    assert call.keywords["max_retries"] == 3
+
+
 def test_cli_manifest_overrides_legacy_flags(monkeypatch, tmp_path) -> None:
     captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
 
