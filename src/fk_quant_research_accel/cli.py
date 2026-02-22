@@ -196,16 +196,21 @@ def run_batch_command(
         concurrency_limit=concurrency,
     )
 
-    rows = run_batch(
-        client=client,
-        scenarios=scenarios,
-        batch_config=config,
-        poll_seconds=effective_poll_seconds,
-        max_wait_seconds=effective_max_wait_seconds,
-        artifacts_dir=artifacts_dir,
-        db_path=db_path,
-        seed=seed,
-        experiment_manifest_hash=experiment_manifest_hash,
+    rows = anyio.run(
+        partial(
+            run_batch_async,
+            client=async_client,
+            scenarios=scenarios,
+            batch_config=config,
+            poll_seconds=effective_poll_seconds,
+            max_wait_seconds=effective_max_wait_seconds,
+            concurrency_limit=concurrency,
+            max_retries=max_retries,
+            artifacts_dir=artifacts_dir,
+            db_path=db_path,
+            seed=seed,
+            experiment_manifest_hash=experiment_manifest_hash,
+        )
     )
     output_path = write_csv(rows, output)
     _log_top(rows)
