@@ -11,7 +11,6 @@ import structlog
 import typer
 
 from .async_client import AsyncFKPinnClient
-from .client import FKPinnClient
 from .logging import configure_logging
 from .models import ExperimentManifest, LogLevel, content_hash, load_manifest
 from .async_orchestrator import resume_batch_async, run_batch_async
