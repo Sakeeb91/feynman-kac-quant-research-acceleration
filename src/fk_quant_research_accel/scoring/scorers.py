@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from fk_quant_research_accel.models.enums import ScoringStrategy
@@ -35,8 +36,6 @@ def score_convergence_rate(record: dict[str, Any]) -> float:
     runtime = 1.0
     if runtime_seconds is not None:
         runtime = max(1.0, float(runtime_seconds))
-
-    import math
 
     return float(train_loss) * math.log1p(runtime)
 
