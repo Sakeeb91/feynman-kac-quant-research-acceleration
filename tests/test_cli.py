@@ -49,6 +49,23 @@ def _patch_anyio_run_capture(monkeypatch, *, returned_rows: list[dict[str, Any]]
     return captured
 
 
+def _patch_render_leaderboard_capture(monkeypatch) -> dict[str, Any]:
+    captured: dict[str, Any] = {"calls": []}
+
+    def fake_render_leaderboard(rows, n=10, title="Leaderboard", console=None):
+        captured["calls"].append(
+            {
+                "rows": rows,
+                "n": n,
+                "title": title,
+                "console": console,
+            }
+        )
+
+    monkeypatch.setattr(cli_module, "render_leaderboard", fake_render_leaderboard)
+    return captured
+
+
 def _write_manifest(path: Path, payload: dict[str, object]) -> Path:
     path.write_text(yaml.safe_dump(payload, sort_keys=True), encoding="utf-8")
     return path
