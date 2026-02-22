@@ -172,6 +172,7 @@ async def _submit_and_poll_scenario(
     poll_seconds: float,
     max_wait_seconds: float,
     max_retries: int,
+    scorer: ScorerFn,
 ) -> dict[str, Any]:
     simulation_response, submit_attempts = await _retry_call(
         lambda: client.create_simulation(
