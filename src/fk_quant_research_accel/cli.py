@@ -19,7 +19,10 @@ from .orchestrator import (
     generate_black_scholes_scenarios,
     generate_scenarios_from_manifest,
 )
+from .run_analysis.formatters import emit_csv, emit_json, emit_runs_table, get_effective_format
+from .run_analysis.queries import list_runs_with_metrics
 from .reporting import write_csv
+from .store.metadata import MetadataStore
 from .validation import validate_manifest
 
 app = typer.Typer(name="fk-research", help="FK Quant Research Acceleration Platform")
@@ -262,6 +265,54 @@ def resume_batch_command(
     output_path = write_csv(rows, output)
     render_leaderboard(rows)
     log.info("resume_batch_complete", rows=len(rows), output=str(output_path))
+
+
+@app.command("list-runs")
+def list_runs_command(
+    db_path: str = typer.Option("artifacts/experiments.db", "--db-path"),
+    status: str | None = typer.Option(None, "--status", help="Filter by run status"),
+    from_date: str | None = typer.Option(None, "--from", help="Start date (ISO format)"),
+    to_date: str | None = typer.Option(None, "--to", help="End date (ISO format)"),
+    min_score: float | None = typer.Option(None, "--min-score", help="Min best_score"),
+    max_score: float | None = typer.Option(None, "--max-score", help="Max best_score"),
+    git_sha: str | None = typer.Option(None, "--git-sha", help="Filter by git SHA"),
+    manifest_hash: str | None = typer.Option(None, "--manifest-hash", help="Filter by manifest hash"),
+    limit: int = typer.Option(20, "--limit", min=1, help="Max runs to return"),
+    offset: int = typer.Option(0, "--offset", min=0, help="Skip first N runs"),
+    output_format: str | None = typer.Option(None, "--format", help="Output format: table|json|csv"),
+    verbose: bool = typer.Option(False, "--verbose", help="Show additional columns"),
+) -> None:
+    log = structlog.get_logger()
+    if output_format is not None and output_format not in {"table", "json", "csv"}:
+        raise typer.BadParameter("--format must be one of: table, json, csv")
+
+    store = MetadataStore(db_path)
+    try:
+        rows = list_runs_with_metrics(
+            store,
+            status=status,
+            from_date=from_date,
+            to_date=to_date,
+            min_score=min_score,
+            max_score=max_score,
+            git_sha=git_sha,
+            manifest_hash=manifest_hash,
+            limit=limit,
+            offset=offset,
+        )
+        fmt = get_effective_format(output_format)  # type: ignore[arg-type]
+        if fmt == "table":
+            emit_runs_table(rows, verbose=verbose)
+        elif fmt == "json":
+            emit_json(rows)
+        else:
+            emit_csv(rows)
+    except Exception as exc:  # noqa: BLE001
+        log.error("list_runs_failed", db_path=db_path, error=str(exc))
+        raise typer.Exit(code=1) from exc
+    finally:
+        store.close()
+
 
 def main() -> None:
     app()
