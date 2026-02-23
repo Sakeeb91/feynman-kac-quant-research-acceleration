@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from fk_quant_research_accel.models import generate_batch_run_id, generate_scenario_run_id
 from fk_quant_research_accel.store.artifacts import ArtifactStore
 from fk_quant_research_accel.store.metadata import MetadataStore
-from fk_quant_research_accel.store.migrations import init_db
+from fk_quant_research_accel.store.migrations import CURRENT_SCHEMA_VERSION, init_db
 
 
 def test_init_db_enables_wal_and_user_version(tmp_path) -> None:
@@ -51,6 +51,20 @@ def test_init_db_v2_adds_phase3_columns(tmp_path) -> None:
     assert "max_retries" in scenario_columns
     assert "concurrency_limit" in batch_columns
     assert "interrupted_at" in batch_columns
+
+
+def test_init_db_v3_adds_manifest_hash_column(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    conn = init_db(db_path)
+    try:
+        batch_columns = {row[1] for row in conn.execute("PRAGMA table_info(batch_runs)").fetchall()}
+        user_version = conn.execute("PRAGMA user_version").fetchone()[0]
+    finally:
+        conn.close()
+
+    assert "manifest_hash" in batch_columns
+    assert CURRENT_SCHEMA_VERSION == 3
+    assert user_version == 3
 
 
 def test_metadata_store_batch_roundtrip(tmp_path) -> None:
