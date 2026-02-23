@@ -96,10 +96,11 @@ Plans:
   1. Researcher can list all past runs with summary metrics (timestamp, status, scenario count, score summary) via `list-runs`
   2. Researcher can compare two runs side-by-side, aligned by scenario parameters, with delta reporting via `compare-runs`
   3. Researcher can view full detailed results for any past run (per-scenario breakdown, convergence health, config) via `show-run`
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md -- Foundation layer (schema v3, MetadataStore queries, RunResolver, formatters) + list-runs command
+- [ ] 05-02-PLAN.md -- Comparison engine + compare-runs and show-run commands
 
 ### Phase 6: Extensibility
 **Goal**: New PDE problem types can be added without modifying orchestrator internals, via a clean ProblemSpec protocol
@@ -138,7 +139,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 2. YAML Manifests, Validation, and Domain Models | 4/4 | Complete (gaps closed) | 2026-02-21 |
 | 3. Concurrent Durable Execution | 3/3 | Complete (UAT passed) | 2026-02-22 |
 | 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Planned | - |
-| 5. Run Analysis CLI | 0/1 | Not started | - |
+| 5. Run Analysis CLI | 0/2 | Planned | - |
 | 6. Extensibility | 0/2 | Not started | - |
 | 7. Model Packaging | 0/1 | Not started | - |
 
