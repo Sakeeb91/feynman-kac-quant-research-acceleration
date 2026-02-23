@@ -99,6 +99,8 @@ class MetadataStore:
         to_date: str | None = None,
         git_sha: str | None = None,
         manifest_hash: str | None = None,
+        min_score: float | None = None,
+        max_score: float | None = None,
         order_by: str = "created_at DESC",
         limit: int = 20,
         offset: int = 0,
@@ -122,9 +124,19 @@ class MetadataStore:
         if manifest_hash is not None:
             where_clauses.append("b.manifest_hash = ?")
             params.append(manifest_hash)
+        having_clauses: list[str] = []
+        if min_score is not None:
+            having_clauses.append("MIN(CASE WHEN s.status = 'completed' THEN s.score END) >= ?")
+            params.append(min_score)
+        if max_score is not None:
+            having_clauses.append("MIN(CASE WHEN s.status = 'completed' THEN s.score END) <= ?")
+            params.append(max_score)
         where_sql = ""
         if where_clauses:
             where_sql = f"WHERE {' AND '.join(where_clauses)}"
+        having_sql = ""
+        if having_clauses:
+            having_sql = f"HAVING {' AND '.join(having_clauses)}"
         rows = self.connection.execute(
             f"""
             SELECT
@@ -134,6 +146,7 @@ class MetadataStore:
             LEFT JOIN scenario_runs AS s ON s.batch_run_id = b.batch_run_id
             {where_sql}
             GROUP BY b.batch_run_id
+            {having_sql}
             ORDER BY b.{effective_order_by}
             LIMIT ?
             OFFSET ?
