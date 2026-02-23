@@ -269,6 +269,7 @@ def run_batch(
             seed=seed,
             scenario_count=len(scenarios),
             artifact_path=str(batch_dir),
+            manifest_hash=experiment_manifest_hash,
         )
         log.info(
             "batch_started",
