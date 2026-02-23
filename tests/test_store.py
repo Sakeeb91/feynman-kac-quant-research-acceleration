@@ -9,6 +9,56 @@ from fk_quant_research_accel.store.metadata import MetadataStore
 from fk_quant_research_accel.store.migrations import CURRENT_SCHEMA_VERSION, init_db
 
 
+def _insert_batch_run(
+    store: MetadataStore,
+    tmp_path,
+    *,
+    batch_run_id: str,
+    created_at: str,
+    status: str = "running",
+    git_sha: str | None = None,
+    scenario_count: int = 1,
+) -> None:
+    store.create_batch_run(
+        batch_run_id=batch_run_id,
+        created_at=created_at,
+        config_json=json.dumps({"n_steps": 10}),
+        manifest_schema_version=1,
+        git_sha=git_sha,
+        git_dirty=False,
+        python_version="3.12.0",
+        os_info="test-os",
+        seed=123,
+        scenario_count=scenario_count,
+        artifact_path=str(tmp_path / "artifacts" / batch_run_id),
+    )
+    store.update_batch_status(batch_run_id, status)
+
+
+def _insert_scenario_result(
+    store: MetadataStore,
+    *,
+    batch_run_id: str,
+    scenario_payload: dict[str, object] | None = None,
+    status: str = "completed",
+    score: float | None = None,
+) -> None:
+    scenario_run_id = str(generate_scenario_run_id())
+    store.create_scenario_run(
+        scenario_run_id=scenario_run_id,
+        batch_run_id=batch_run_id,
+        scenario_json=json.dumps(scenario_payload or {"dim": 5}),
+        created_at=datetime.now(UTC).isoformat(),
+    )
+    store.persist_scenario_result(
+        scenario_run_id=scenario_run_id,
+        status=status,
+        result_json=json.dumps({"status": status, "score": score}),
+        score=score,
+        completed_at=datetime.now(UTC).isoformat(),
+    )
+
+
 def test_init_db_enables_wal_and_user_version(tmp_path) -> None:
     db_path = tmp_path / "experiments.db"
     conn = init_db(db_path)
