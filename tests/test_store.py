@@ -587,6 +587,68 @@ def test_list_batch_runs_score_filters(tmp_path) -> None:
     assert {row["batch_run_id"] for row in range_filtered} == {mid_run, high_run}
 
 
+def test_find_batch_runs_by_prefix_exact(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    batch_run_id = "70000000-0000-0000-0000-000000000001"
+    _insert_batch_run(
+        store,
+        tmp_path,
+        batch_run_id=batch_run_id,
+        created_at="2025-01-01T00:00:00+00:00",
+        status="completed",
+    )
+
+    rows = store.find_batch_runs_by_prefix(batch_run_id[:10])
+    store.close()
+
+    assert len(rows) == 1
+    assert rows[0]["batch_run_id"] == batch_run_id
+
+
+def test_find_batch_runs_by_prefix_multiple(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    first = "aaaaaaaa-1111-1111-1111-111111111111"
+    second = "aaaaaaaa-2222-2222-2222-222222222222"
+    _insert_batch_run(
+        store,
+        tmp_path,
+        batch_run_id=first,
+        created_at="2025-01-01T00:00:00+00:00",
+        status="completed",
+    )
+    _insert_batch_run(
+        store,
+        tmp_path,
+        batch_run_id=second,
+        created_at="2025-01-02T00:00:00+00:00",
+        status="completed",
+    )
+
+    rows = store.find_batch_runs_by_prefix("aaaaaaaa")
+    store.close()
+
+    assert {row["batch_run_id"] for row in rows} == {first, second}
+
+
+def test_find_batch_runs_by_prefix_no_match(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    _insert_batch_run(
+        store,
+        tmp_path,
+        batch_run_id="90000000-0000-0000-0000-000000000001",
+        created_at="2025-01-01T00:00:00+00:00",
+        status="completed",
+    )
+
+    rows = store.find_batch_runs_by_prefix("zzzzzzzz")
+    store.close()
+
+    assert rows == []
+
+
 def test_artifact_store_creates_batch_and_scenario_dirs(tmp_path) -> None:
     artifacts = ArtifactStore(tmp_path / "artifacts")
     batch_run_id = str(generate_batch_run_id())
