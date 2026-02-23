@@ -370,6 +370,41 @@ def test_metadata_store_updates_retry_count(tmp_path) -> None:
     assert scenario_rows[0]["retry_count"] == 2
 
 
+def test_list_batch_runs_returns_all_unfiltered(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    run_ids = [
+        "00000000-0000-0000-0000-000000000001",
+        "00000000-0000-0000-0000-000000000002",
+        "00000000-0000-0000-0000-000000000003",
+    ]
+    created_ats = [
+        "2025-01-01T00:00:00+00:00",
+        "2025-06-15T00:00:00+00:00",
+        "2025-12-31T00:00:00+00:00",
+    ]
+    for batch_run_id, created_at in zip(run_ids, created_ats, strict=True):
+        _insert_batch_run(
+            store,
+            tmp_path,
+            batch_run_id=batch_run_id,
+            created_at=created_at,
+            status="completed",
+        )
+
+    rows = store.list_batch_runs()
+    store.close()
+
+    assert [row["batch_run_id"] for row in rows] == list(reversed(run_ids))
+    assert len(rows) == 3
+    for row in rows:
+        assert "batch_run_id" in row
+        assert "created_at" in row
+        assert "status" in row
+        assert "scenario_count" in row
+        assert "best_score" in row
+
+
 def test_artifact_store_creates_batch_and_scenario_dirs(tmp_path) -> None:
     artifacts = ArtifactStore(tmp_path / "artifacts")
     batch_run_id = str(generate_batch_run_id())
