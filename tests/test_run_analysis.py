@@ -8,7 +8,12 @@ import pytest
 from rich.console import Console
 
 from fk_quant_research_accel.store.metadata import MetadataStore
-from fk_quant_research_accel.run_analysis.formatters import get_effective_format
+from fk_quant_research_accel.run_analysis.formatters import (
+    emit_csv,
+    emit_json,
+    emit_runs_table,
+    get_effective_format,
+)
 from fk_quant_research_accel.run_analysis.resolver import resolve_run_id
 from fk_quant_research_accel.run_analysis.queries import list_runs_with_metrics
 
@@ -206,3 +211,43 @@ def test_get_effective_format_explicit_override() -> None:
 def test_get_effective_format_none_tty() -> None:
     console = Console(file=StringIO(), force_terminal=True)
     assert get_effective_format(None, console=console) == "table"
+
+
+def test_emit_json_output(capsys) -> None:
+    rows = [{"batch_run_id": "run-1", "best_score": 0.1}]
+    emit_json(rows)
+    captured = capsys.readouterr()
+    parsed = json.loads(captured.out)
+    assert parsed[0]["batch_run_id"] == "run-1"
+
+
+def test_emit_csv_output(capsys) -> None:
+    rows = [{"batch_run_id": "run-1", "best_score": 0.1}]
+    emit_csv(rows)
+    captured = capsys.readouterr()
+    lines = [line.strip() for line in captured.out.strip().splitlines()]
+    assert lines[0] == "batch_run_id,best_score"
+    assert lines[1] == "run-1,0.1"
+
+
+def test_emit_runs_table_renders() -> None:
+    rows = [
+        {
+            "batch_run_id": "run-1",
+            "created_at": "2025-01-01T00:00:00+00:00",
+            "status": "completed",
+            "scenario_count": 3,
+            "completed_count": 3,
+            "failed_count": 0,
+            "best_score": 0.1,
+            "median_score": 0.2,
+            "git_sha": "abc123",
+            "manifest_hash": "manifest-1",
+        }
+    ]
+    output = StringIO()
+    console = Console(file=output, force_terminal=True)
+    emit_runs_table(rows, console=console)
+    rendered = output.getvalue()
+    assert "Run ID" in rendered
+    assert "Best Score" in rendered
