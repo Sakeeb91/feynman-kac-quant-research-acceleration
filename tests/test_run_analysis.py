@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
+from io import StringIO
 
 import pytest
+from rich.console import Console
 
 from fk_quant_research_accel.store.metadata import MetadataStore
+from fk_quant_research_accel.run_analysis.formatters import get_effective_format
 from fk_quant_research_accel.run_analysis.resolver import resolve_run_id
 from fk_quant_research_accel.run_analysis.queries import list_runs_with_metrics
 
@@ -194,3 +197,12 @@ def test_list_runs_with_metrics_no_completed_scenarios(tmp_path) -> None:
     assert len(rows) == 1
     assert rows[0]["best_score"] is None
     assert rows[0]["median_score"] is None
+
+
+def test_get_effective_format_explicit_override() -> None:
+    assert get_effective_format("json") == "json"
+
+
+def test_get_effective_format_none_tty() -> None:
+    console = Console(file=StringIO(), force_terminal=True)
+    assert get_effective_format(None, console=console) == "table"
