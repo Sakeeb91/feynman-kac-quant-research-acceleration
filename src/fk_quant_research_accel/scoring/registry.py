@@ -27,7 +27,9 @@ def get_scorer(config: ScoringConfig) -> ScorerFn:
         return _import_custom_scorer(config.custom_scorer)
 
     # Ensure decorators in scorers.py run before registry lookup.
-    import fk_quant_research_accel.scoring.scorers
+    import fk_quant_research_accel.scoring.scorers as _registered_scorers
+
+    _ = _registered_scorers
 
     if config.strategy == ScoringStrategy.LOSS_BASED:
         from fk_quant_research_accel.scoring.scorers import score_loss_based
