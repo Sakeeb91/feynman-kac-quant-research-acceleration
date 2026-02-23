@@ -91,6 +91,31 @@ class MetadataStore:
         ).fetchone()
         return dict(row) if row else None
 
+    def list_batch_runs(
+        self,
+        *,
+        order_by: str = "created_at DESC",
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        allowed_order_by = {"created_at DESC", "created_at ASC"}
+        effective_order_by = order_by if order_by in allowed_order_by else "created_at DESC"
+        rows = self.connection.execute(
+            f"""
+            SELECT
+                b.*,
+                MIN(CASE WHEN s.status = 'completed' THEN s.score END) AS best_score
+            FROM batch_runs AS b
+            LEFT JOIN scenario_runs AS s ON s.batch_run_id = b.batch_run_id
+            GROUP BY b.batch_run_id
+            ORDER BY b.{effective_order_by}
+            LIMIT ?
+            OFFSET ?
+            """,
+            (limit, offset),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
     def get_scenario_runs(self, batch_run_id: str) -> list[dict[str, Any]]:
         rows = self.connection.execute(
             "SELECT * FROM scenario_runs WHERE batch_run_id = ?",
