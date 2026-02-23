@@ -522,6 +522,29 @@ def test_list_batch_runs_filters_by_manifest_hash(tmp_path) -> None:
     assert rows[0]["batch_run_id"] == batch_run_id
 
 
+def test_list_batch_runs_pagination(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    for index in range(5):
+        batch_run_id = f"50000000-0000-0000-0000-00000000000{index}"
+        _insert_batch_run(
+            store,
+            tmp_path,
+            batch_run_id=batch_run_id,
+            created_at=f"2025-01-0{index + 1}T00:00:00+00:00",
+            status="completed",
+        )
+
+    first = store.list_batch_runs(limit=2, offset=0)
+    second = store.list_batch_runs(limit=2, offset=2)
+    third = store.list_batch_runs(limit=2, offset=4)
+    store.close()
+
+    assert len(first) == 2
+    assert len(second) == 2
+    assert len(third) == 1
+
+
 def test_artifact_store_creates_batch_and_scenario_dirs(tmp_path) -> None:
     artifacts = ArtifactStore(tmp_path / "artifacts")
     batch_run_id = str(generate_batch_run_id())
