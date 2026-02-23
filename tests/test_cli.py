@@ -739,3 +739,75 @@ def test_list_runs_with_data(populated_db: str) -> None:
     assert len(payload) == 2
     assert payload[0]["batch_run_id"] == "bbbbbbbb-2222-2222-2222-222222222222"
     assert payload[1]["batch_run_id"] == "aaaaaaaa-1111-1111-1111-111111111111"
+
+
+def test_list_runs_status_filter(populated_db: str) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "list-runs",
+            "--db-path",
+            populated_db,
+            "--status",
+            "completed",
+            "--format",
+            "json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert len(payload) == 1
+    assert payload[0]["status"] == "completed"
+
+
+def test_list_runs_pagination(populated_db: str) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "list-runs",
+            "--db-path",
+            populated_db,
+            "--limit",
+            "1",
+            "--offset",
+            "0",
+            "--format",
+            "json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert len(payload) == 1
+
+
+def test_list_runs_table_format(populated_db: str) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "list-runs",
+            "--db-path",
+            populated_db,
+            "--format",
+            "table",
+        ],
+    )
+
+    assert result.exit_code == 0
+
+
+def test_list_runs_csv_format(populated_db: str) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "list-runs",
+            "--db-path",
+            populated_db,
+            "--format",
+            "csv",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "batch_run_id" in result.stdout
