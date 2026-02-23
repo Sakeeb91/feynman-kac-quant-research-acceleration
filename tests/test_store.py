@@ -545,6 +545,48 @@ def test_list_batch_runs_pagination(tmp_path) -> None:
     assert len(third) == 1
 
 
+def test_list_batch_runs_score_filters(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    low_run = "60000000-0000-0000-0000-000000000001"
+    mid_run = "60000000-0000-0000-0000-000000000002"
+    high_run = "60000000-0000-0000-0000-000000000003"
+
+    _insert_batch_run(
+        store,
+        tmp_path,
+        batch_run_id=low_run,
+        created_at="2025-01-01T00:00:00+00:00",
+        status="completed",
+    )
+    _insert_batch_run(
+        store,
+        tmp_path,
+        batch_run_id=mid_run,
+        created_at="2025-01-02T00:00:00+00:00",
+        status="completed",
+    )
+    _insert_batch_run(
+        store,
+        tmp_path,
+        batch_run_id=high_run,
+        created_at="2025-01-03T00:00:00+00:00",
+        status="completed",
+    )
+    _insert_scenario_result(store, batch_run_id=low_run, score=0.1)
+    _insert_scenario_result(store, batch_run_id=mid_run, score=0.4)
+    _insert_scenario_result(store, batch_run_id=high_run, score=0.8)
+
+    min_filtered = store.list_batch_runs(min_score=0.3)
+    max_filtered = store.list_batch_runs(max_score=0.5)
+    range_filtered = store.list_batch_runs(min_score=0.3, max_score=0.9)
+    store.close()
+
+    assert {row["batch_run_id"] for row in min_filtered} == {mid_run, high_run}
+    assert {row["batch_run_id"] for row in max_filtered} == {low_run, mid_run}
+    assert {row["batch_run_id"] for row in range_filtered} == {mid_run, high_run}
+
+
 def test_artifact_store_creates_batch_and_scenario_dirs(tmp_path) -> None:
     artifacts = ArtifactStore(tmp_path / "artifacts")
     batch_run_id = str(generate_batch_run_id())
