@@ -98,6 +98,7 @@ class MetadataStore:
         from_date: str | None = None,
         to_date: str | None = None,
         git_sha: str | None = None,
+        manifest_hash: str | None = None,
         order_by: str = "created_at DESC",
         limit: int = 20,
         offset: int = 0,
@@ -118,6 +119,9 @@ class MetadataStore:
         if git_sha is not None:
             where_clauses.append("b.git_sha = ?")
             params.append(git_sha)
+        if manifest_hash is not None:
+            where_clauses.append("b.manifest_hash = ?")
+            params.append(manifest_hash)
         where_sql = ""
         if where_clauses:
             where_sql = f"WHERE {' AND '.join(where_clauses)}"
