@@ -7,6 +7,7 @@ import pytest
 
 from fk_quant_research_accel.store.metadata import MetadataStore
 from fk_quant_research_accel.run_analysis.resolver import resolve_run_id
+from fk_quant_research_accel.run_analysis.queries import list_runs_with_metrics
 
 
 def _insert_batch(
@@ -28,6 +29,29 @@ def _insert_batch(
         seed=7,
         scenario_count=1,
         artifact_path=str(tmp_path / "artifacts" / batch_run_id),
+    )
+
+
+def _insert_scenario(
+    store: MetadataStore,
+    *,
+    batch_run_id: str,
+    score: float | None,
+    status: str = "completed",
+) -> None:
+    scenario_id = f"scenario-{datetime.now(UTC).timestamp()}-{score}"
+    store.create_scenario_run(
+        scenario_run_id=scenario_id,
+        batch_run_id=batch_run_id,
+        scenario_json=json.dumps({"dim": 5}),
+        created_at=datetime.now(UTC).isoformat(),
+    )
+    store.persist_scenario_result(
+        scenario_run_id=scenario_id,
+        status=status,
+        result_json=json.dumps({"status": status, "score": score}),
+        score=score,
+        completed_at=datetime.now(UTC).isoformat(),
     )
 
 
@@ -130,3 +154,43 @@ def test_resolve_run_id_latest_out_of_range(tmp_path) -> None:
     with pytest.raises(ValueError, match="No run found"):
         resolve_run_id("latest~5", store)
     store.close()
+
+
+def test_list_runs_with_metrics_adds_median(tmp_path) -> None:
+    store = MetadataStore(tmp_path / "experiments.db")
+    batch_run_id = "eeeeeeee-1111-1111-1111-111111111111"
+    _insert_batch(
+        store,
+        tmp_path,
+        batch_run_id=batch_run_id,
+        created_at="2025-01-01T00:00:00+00:00",
+    )
+    _insert_scenario(store, batch_run_id=batch_run_id, score=0.1)
+    _insert_scenario(store, batch_run_id=batch_run_id, score=0.3)
+    _insert_scenario(store, batch_run_id=batch_run_id, score=0.5)
+
+    rows = list_runs_with_metrics(store)
+    store.close()
+
+    assert len(rows) == 1
+    assert rows[0]["best_score"] == 0.1
+    assert rows[0]["median_score"] == 0.3
+
+
+def test_list_runs_with_metrics_no_completed_scenarios(tmp_path) -> None:
+    store = MetadataStore(tmp_path / "experiments.db")
+    batch_run_id = "ffffffff-1111-1111-1111-111111111111"
+    _insert_batch(
+        store,
+        tmp_path,
+        batch_run_id=batch_run_id,
+        created_at="2025-01-01T00:00:00+00:00",
+    )
+    _insert_scenario(store, batch_run_id=batch_run_id, score=None, status="failed")
+
+    rows = list_runs_with_metrics(store)
+    store.close()
+
+    assert len(rows) == 1
+    assert rows[0]["best_score"] is None
+    assert rows[0]["median_score"] is None
