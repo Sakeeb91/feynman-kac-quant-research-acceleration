@@ -498,6 +498,30 @@ def test_list_batch_runs_filters_by_git_sha(tmp_path) -> None:
     assert rows[0]["batch_run_id"] == "30000000-0000-0000-0000-000000000002"
 
 
+def test_list_batch_runs_filters_by_manifest_hash(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    batch_run_id = "40000000-0000-0000-0000-000000000001"
+    _insert_batch_run(
+        store,
+        tmp_path,
+        batch_run_id=batch_run_id,
+        created_at="2025-01-01T00:00:00+00:00",
+        status="completed",
+    )
+    store.connection.execute(
+        "UPDATE batch_runs SET manifest_hash = ? WHERE batch_run_id = ?",
+        ("manifest-abc", batch_run_id),
+    )
+    store.connection.commit()
+
+    rows = store.list_batch_runs(manifest_hash="manifest-abc")
+    store.close()
+
+    assert len(rows) == 1
+    assert rows[0]["batch_run_id"] == batch_run_id
+
+
 def test_artifact_store_creates_batch_and_scenario_dirs(tmp_path) -> None:
     artifacts = ArtifactStore(tmp_path / "artifacts")
     batch_run_id = str(generate_batch_run_id())
