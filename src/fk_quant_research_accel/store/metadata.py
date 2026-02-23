@@ -95,6 +95,8 @@ class MetadataStore:
         self,
         *,
         status: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
         order_by: str = "created_at DESC",
         limit: int = 20,
         offset: int = 0,
@@ -106,6 +108,12 @@ class MetadataStore:
         if status is not None:
             where_clauses.append("b.status = ?")
             params.append(status)
+        if from_date is not None:
+            where_clauses.append("b.created_at >= ?")
+            params.append(from_date)
+        if to_date is not None:
+            where_clauses.append("b.created_at <= ?")
+            params.append(to_date)
         where_sql = ""
         if where_clauses:
             where_sql = f"WHERE {' AND '.join(where_clauses)}"
