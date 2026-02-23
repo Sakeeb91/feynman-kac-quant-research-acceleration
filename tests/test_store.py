@@ -438,6 +438,38 @@ def test_list_batch_runs_filters_by_status(tmp_path) -> None:
     assert all(row["status"] == "completed" for row in rows)
 
 
+def test_list_batch_runs_filters_by_date_range(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    run_ids = [
+        "20000000-0000-0000-0000-000000000001",
+        "20000000-0000-0000-0000-000000000002",
+        "20000000-0000-0000-0000-000000000003",
+    ]
+    created_ats = [
+        "2025-01-01T00:00:00+00:00",
+        "2025-06-15T00:00:00+00:00",
+        "2025-12-31T00:00:00+00:00",
+    ]
+    for batch_run_id, created_at in zip(run_ids, created_ats, strict=True):
+        _insert_batch_run(
+            store,
+            tmp_path,
+            batch_run_id=batch_run_id,
+            created_at=created_at,
+            status="completed",
+        )
+
+    rows = store.list_batch_runs(
+        from_date="2025-03-01T00:00:00+00:00",
+        to_date="2025-09-01T00:00:00+00:00",
+    )
+    store.close()
+
+    assert len(rows) == 1
+    assert rows[0]["batch_run_id"] == "20000000-0000-0000-0000-000000000002"
+
+
 def test_artifact_store_creates_batch_and_scenario_dirs(tmp_path) -> None:
     artifacts = ArtifactStore(tmp_path / "artifacts")
     batch_run_id = str(generate_batch_run_id())
