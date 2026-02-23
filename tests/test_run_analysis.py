@@ -85,3 +85,48 @@ def test_resolve_run_id_prefix_not_found(tmp_path) -> None:
     with pytest.raises(ValueError, match="No run found"):
         resolve_run_id("zzzzzzzz", store)
     store.close()
+
+
+def test_resolve_run_id_latest(tmp_path) -> None:
+    store = MetadataStore(tmp_path / "experiments.db")
+    first = "bbbbbbbb-1111-1111-1111-111111111111"
+    second = "bbbbbbbb-2222-2222-2222-222222222222"
+    third = "bbbbbbbb-3333-3333-3333-333333333333"
+    _insert_batch(store, tmp_path, batch_run_id=first, created_at="2025-01-01T00:00:00+00:00")
+    _insert_batch(store, tmp_path, batch_run_id=second, created_at="2025-01-02T00:00:00+00:00")
+    _insert_batch(store, tmp_path, batch_run_id=third, created_at="2025-01-03T00:00:00+00:00")
+
+    resolved = resolve_run_id("latest", store)
+    store.close()
+    assert resolved == third
+
+
+def test_resolve_run_id_latest_tilde_n(tmp_path) -> None:
+    store = MetadataStore(tmp_path / "experiments.db")
+    first = "cccccccc-1111-1111-1111-111111111111"
+    second = "cccccccc-2222-2222-2222-222222222222"
+    third = "cccccccc-3333-3333-3333-333333333333"
+    _insert_batch(store, tmp_path, batch_run_id=first, created_at="2025-01-01T00:00:00+00:00")
+    _insert_batch(store, tmp_path, batch_run_id=second, created_at="2025-01-02T00:00:00+00:00")
+    _insert_batch(store, tmp_path, batch_run_id=third, created_at="2025-01-03T00:00:00+00:00")
+
+    resolved_second_newest = resolve_run_id("latest~1", store)
+    resolved_oldest = resolve_run_id("latest~2", store)
+    store.close()
+
+    assert resolved_second_newest == second
+    assert resolved_oldest == first
+
+
+def test_resolve_run_id_latest_out_of_range(tmp_path) -> None:
+    store = MetadataStore(tmp_path / "experiments.db")
+    _insert_batch(
+        store,
+        tmp_path,
+        batch_run_id="dddddddd-1111-1111-1111-111111111111",
+        created_at="2025-01-01T00:00:00+00:00",
+    )
+
+    with pytest.raises(ValueError, match="No run found"):
+        resolve_run_id("latest~5", store)
+    store.close()
