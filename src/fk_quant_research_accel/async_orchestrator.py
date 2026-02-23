@@ -437,6 +437,7 @@ async def run_batch_async(
             len(scenarios),
             str(batch_dir),
             concurrency_limit,
+            manifest_hash=experiment_manifest_hash,
             lock=store_lock,
         )
         log.info(
