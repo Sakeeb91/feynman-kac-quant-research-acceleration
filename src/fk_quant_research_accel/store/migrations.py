@@ -6,7 +6,7 @@ import sqlite3
 from pathlib import Path
 
 
-CURRENT_SCHEMA_VERSION = 2
+CURRENT_SCHEMA_VERSION = 3
 
 
 def init_db(db_path: str | Path) -> sqlite3.Connection:
@@ -30,6 +30,7 @@ def _apply_migrations(conn: sqlite3.Connection, current_version: int) -> None:
     migrations = {
         0: _migrate_v0_to_v1,
         1: _migrate_v1_to_v2,
+        2: _migrate_v2_to_v3,
     }
     for version in range(current_version, CURRENT_SCHEMA_VERSION):
         migration = migrations.get(version)
@@ -93,3 +94,8 @@ def _migrate_v1_to_v2(conn: sqlite3.Connection) -> None:
     conn.execute("ALTER TABLE scenario_runs ADD COLUMN max_retries INTEGER DEFAULT 3")
     conn.execute("ALTER TABLE batch_runs ADD COLUMN concurrency_limit INTEGER DEFAULT 1")
     conn.execute("ALTER TABLE batch_runs ADD COLUMN interrupted_at TEXT")
+
+
+def _migrate_v2_to_v3(conn: sqlite3.Connection) -> None:
+    """Add manifest hash metadata column for run analysis filtering."""
+    conn.execute("ALTER TABLE batch_runs ADD COLUMN manifest_hash TEXT")
