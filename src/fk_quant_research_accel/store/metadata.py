@@ -28,6 +28,7 @@ class MetadataStore:
         scenario_count: int,
         artifact_path: str,
         concurrency_limit: int = 1,
+        manifest_hash: str | None = None,
     ) -> None:
         self.connection.execute(
             """
@@ -43,8 +44,9 @@ class MetadataStore:
                 seed,
                 scenario_count,
                 artifact_path,
-                concurrency_limit
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                concurrency_limit,
+                manifest_hash
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 batch_run_id,
@@ -59,6 +61,7 @@ class MetadataStore:
                 scenario_count,
                 artifact_path,
                 concurrency_limit,
+                manifest_hash,
             ),
         )
         self.connection.commit()
