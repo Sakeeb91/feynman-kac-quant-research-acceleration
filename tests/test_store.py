@@ -405,6 +405,39 @@ def test_list_batch_runs_returns_all_unfiltered(tmp_path) -> None:
         assert "best_score" in row
 
 
+def test_list_batch_runs_filters_by_status(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+
+    _insert_batch_run(
+        store,
+        tmp_path,
+        batch_run_id="10000000-0000-0000-0000-000000000001",
+        created_at="2025-01-01T00:00:00+00:00",
+        status="completed",
+    )
+    _insert_batch_run(
+        store,
+        tmp_path,
+        batch_run_id="10000000-0000-0000-0000-000000000002",
+        created_at="2025-01-02T00:00:00+00:00",
+        status="completed",
+    )
+    _insert_batch_run(
+        store,
+        tmp_path,
+        batch_run_id="10000000-0000-0000-0000-000000000003",
+        created_at="2025-01-03T00:00:00+00:00",
+        status="running",
+    )
+
+    rows = store.list_batch_runs(status="completed")
+    store.close()
+
+    assert len(rows) == 2
+    assert all(row["status"] == "completed" for row in rows)
+
+
 def test_artifact_store_creates_batch_and_scenario_dirs(tmp_path) -> None:
     artifacts = ArtifactStore(tmp_path / "artifacts")
     batch_run_id = str(generate_batch_run_id())
