@@ -162,6 +162,13 @@ class MetadataStore:
         ).fetchall()
         return [dict(row) for row in rows]
 
+    def find_batch_runs_by_prefix(self, prefix: str) -> list[dict[str, Any]]:
+        rows = self.connection.execute(
+            "SELECT * FROM batch_runs WHERE batch_run_id LIKE ? || '%'",
+            (prefix,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
     def get_incomplete_scenario_runs(self, batch_run_id: str) -> list[dict[str, Any]]:
         rows = self.connection.execute(
             """
