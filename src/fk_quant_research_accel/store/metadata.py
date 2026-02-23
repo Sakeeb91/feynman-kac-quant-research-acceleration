@@ -94,12 +94,21 @@ class MetadataStore:
     def list_batch_runs(
         self,
         *,
+        status: str | None = None,
         order_by: str = "created_at DESC",
         limit: int = 20,
         offset: int = 0,
     ) -> list[dict[str, Any]]:
         allowed_order_by = {"created_at DESC", "created_at ASC"}
         effective_order_by = order_by if order_by in allowed_order_by else "created_at DESC"
+        where_clauses: list[str] = []
+        params: list[Any] = []
+        if status is not None:
+            where_clauses.append("b.status = ?")
+            params.append(status)
+        where_sql = ""
+        if where_clauses:
+            where_sql = f"WHERE {' AND '.join(where_clauses)}"
         rows = self.connection.execute(
             f"""
             SELECT
@@ -107,12 +116,13 @@ class MetadataStore:
                 MIN(CASE WHEN s.status = 'completed' THEN s.score END) AS best_score
             FROM batch_runs AS b
             LEFT JOIN scenario_runs AS s ON s.batch_run_id = b.batch_run_id
+            {where_sql}
             GROUP BY b.batch_run_id
             ORDER BY b.{effective_order_by}
             LIMIT ?
             OFFSET ?
             """,
-            (limit, offset),
+            (*params, limit, offset),
         ).fetchall()
         return [dict(row) for row in rows]
 
