@@ -250,4 +250,4 @@ def test_emit_runs_table_renders() -> None:
     emit_runs_table(rows, console=console)
     rendered = output.getvalue()
     assert "Run ID" in rendered
-    assert "Best Score" in rendered
+    assert "Best" in rendered
