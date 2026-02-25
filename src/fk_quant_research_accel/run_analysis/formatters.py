@@ -186,3 +186,16 @@ def emit_comparison_table(
             )
         table.add_row(*cells)
     active_console.print(table)
+
+
+def emit_comparison_json(comparison: dict[str, Any]) -> None:
+    print(json.dumps(comparison, indent=2, default=str))
+
+
+def emit_comparison_csv(comparison: dict[str, Any]) -> None:
+    rows = list(comparison.get("matched", []))
+    if not rows:
+        return
+    writer = csv.DictWriter(sys.stdout, fieldnames=list(rows[0].keys()))
+    writer.writeheader()
+    writer.writerows(rows)
