@@ -637,3 +637,13 @@ def test_emit_comparison_csv_output(capsys) -> None:
     lines = [line.strip() for line in captured.out.strip().splitlines()]
     assert lines[0] == "run_a_score,run_b_score,delta_abs_score"
     assert lines[1] == "0.1,0.2,-0.1"
+
+
+def test_emit_show_run_json_output(capsys) -> None:
+    batch = {"batch_run_id": "run-1", "status": "completed"}
+    scenarios = [{"scenario_run_id": "scenario-1", "status": "completed"}]
+    emit_show_run_json(batch, scenarios)
+    captured = capsys.readouterr()
+    parsed = json.loads(captured.out)
+    assert parsed["batch_run"]["batch_run_id"] == "run-1"
+    assert parsed["scenarios"][0]["scenario_run_id"] == "scenario-1"
