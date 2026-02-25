@@ -113,8 +113,23 @@ def test_init_db_v3_adds_manifest_hash_column(tmp_path) -> None:
         conn.close()
 
     assert "manifest_hash" in batch_columns
-    assert CURRENT_SCHEMA_VERSION == 3
-    assert user_version == 3
+    assert CURRENT_SCHEMA_VERSION == 4
+    assert user_version == 4
+
+
+def test_init_db_v4_adds_problem_id_column_with_default(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    conn = init_db(db_path)
+    try:
+        batch_columns = {row[1] for row in conn.execute("PRAGMA table_info(batch_runs)").fetchall()}
+        default_problem_id = conn.execute(
+            "SELECT dflt_value FROM pragma_table_info('batch_runs') WHERE name='problem_id'"
+        ).fetchone()[0]
+    finally:
+        conn.close()
+
+    assert "problem_id" in batch_columns
+    assert default_problem_id == "'black_scholes'"
 
 
 def test_metadata_store_batch_roundtrip(tmp_path) -> None:
