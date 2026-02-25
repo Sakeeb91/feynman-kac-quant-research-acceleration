@@ -414,6 +414,38 @@ def test_align_scenarios_model_config_key() -> None:
     assert len(only_b) == 1
 
 
+def test_align_scenarios_uses_full_payload_for_non_bs_problem() -> None:
+    scenarios_a = [
+        {
+            "scenario_json": json.dumps(
+                {
+                    "dim": 1,
+                    "omega": 1.0,
+                    "mass": 1.0,
+                    "potential_type": "quadratic",
+                }
+            )
+        }
+    ]
+    scenarios_b = [
+        {
+            "scenario_json": json.dumps(
+                {
+                    "dim": 1,
+                    "omega": 1.0,
+                    "mass": 1.0,
+                    "potential_type": "quadratic",
+                }
+            )
+        }
+    ]
+    matched, only_a, only_b = align_scenarios(scenarios_a, scenarios_b)
+
+    assert len(matched) == 1
+    assert only_a == []
+    assert only_b == []
+
+
 def test_compute_comparison_matched_deltas(tmp_path) -> None:
     store = MetadataStore(tmp_path / "experiments.db")
     run_a = "12121212-1111-1111-1111-111111111111"
