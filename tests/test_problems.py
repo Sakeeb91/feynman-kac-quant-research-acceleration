@@ -388,6 +388,16 @@ def test_harmonic_oscillator_generate_scenarios_cross_product() -> None:
     assert {scenario["omega"] for scenario in scenarios} == {0.5, 1.0}
 
 
+def test_harmonic_oscillator_generate_scenarios_defaults() -> None:
+    spec = HarmonicOscillatorSpec()
+    scenarios = spec.generate_scenarios({}, [{"architecture": "default"}])
+    assert len(scenarios) == 1
+    assert scenarios[0]["dim"] == 1
+    assert scenarios[0]["omega"] == 1.0
+    assert scenarios[0]["mass"] == 1.0
+    assert scenarios[0]["potential_type"] == "quadratic"
+
+
 def test_harmonic_oscillator_validate_valid_params() -> None:
     spec = HarmonicOscillatorSpec()
     errors = spec.validate(
