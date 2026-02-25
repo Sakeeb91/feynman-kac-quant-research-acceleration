@@ -228,6 +228,7 @@ def run_batch(
     client: FKPinnClient,
     scenarios: list[Scenario],
     batch_config: BatchConfig,
+    problem_id: str = "black_scholes",
     poll_seconds: float = 1.5,
     max_wait_seconds: float = 1800.0,
     artifacts_dir: str | Path = "artifacts",
