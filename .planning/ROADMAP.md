@@ -109,11 +109,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. A new PDE problem type can be added by implementing the ProblemSpec protocol (parameter schema, scenario generator, scorer, validator) without modifying any orchestrator code
   2. Researcher selects problem type via `problem_id` field in the manifest, and the platform ships with `black_scholes` and `harmonic_oscillator` built-in
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md -- ProblemSpec protocol, registry, BlackScholesSpec, HarmonicOscillatorSpec (TDD)
+- [ ] 06-02-PLAN.md -- Orchestrator integration, DB migration, CLI wiring, preflight, comparison updates
 
 ### Phase 7: Model Packaging
 **Goal**: The winning run from any batch can be exported as a self-contained, reproducible model package ready for downstream use
@@ -140,7 +140,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 3. Concurrent Durable Execution | 3/3 | Complete (UAT passed) | 2026-02-22 |
 | 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Planned | - |
 | 5. Run Analysis CLI | 0/2 | Planned | - |
-| 6. Extensibility | 0/2 | Not started | - |
+| 6. Extensibility | 0/2 | Planned | - |
 | 7. Model Packaging | 0/1 | Not started | - |
 
 ---
