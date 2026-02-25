@@ -364,6 +364,39 @@ def compare_runs_command(
         store.close()
 
 
+@app.command("show-run")
+def show_run_command(
+    run_id: str = typer.Argument(..., help="Run to inspect (UUID, prefix, latest, latest~N)"),
+    db_path: str = typer.Option("artifacts/experiments.db", "--db-path"),
+    output_format: str | None = typer.Option(None, "--format"),
+    verbose: bool = typer.Option(False, "--verbose"),
+) -> None:
+    log = structlog.get_logger()
+    if output_format is not None and output_format not in {"table", "json", "csv"}:
+        raise typer.BadParameter("--format must be one of: table, json, csv")
+
+    store = MetadataStore(db_path)
+    try:
+        resolved = resolve_run_id(run_id, store)
+        batch_run = store.get_batch_run(resolved)
+        if batch_run is None:
+            raise ValueError(f"No run found for selector: {run_id}")
+        scenarios = store.get_scenario_runs(resolved)
+
+        fmt = get_effective_format(output_format)  # type: ignore[arg-type]
+        if fmt == "table":
+            emit_show_run(batch_run, scenarios, verbose=verbose)
+        elif fmt == "json":
+            emit_show_run_json(batch_run, scenarios)
+        else:
+            emit_show_run_csv(scenarios)
+    except ValueError as exc:
+        log.error("show_run_failed", run_id=run_id, error=str(exc))
+        raise typer.Exit(code=1) from exc
+    finally:
+        store.close()
+
+
 def main() -> None:
     app()
 
