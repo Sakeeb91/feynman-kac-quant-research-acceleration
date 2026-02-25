@@ -176,6 +176,17 @@ def test_get_problem_spec_error_lists_valid_ids() -> None:
     assert "registered" in message
 
 
+def test_get_problem_spec_error_when_registry_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    _PROBLEM_REGISTRY.clear()
+    monkeypatch.setattr(
+        "fk_quant_research_accel.problems.registry._ensure_builtin_registration",
+        lambda: None,
+    )
+    with pytest.raises(ValueError) as exc:
+        get_problem_spec("missing")
+    assert "Unknown problem_id" in str(exc.value)
+
+
 def test_get_problem_spec_error_suggests_nearest_match() -> None:
     class _BlackScholesLike(_RegisteredSpec):
         @property
