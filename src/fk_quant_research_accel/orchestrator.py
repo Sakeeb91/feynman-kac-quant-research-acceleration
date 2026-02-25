@@ -42,6 +42,7 @@ class Scenario:
     correlation: float | list[list[float]]
     option_type: str = "call"
     model_config: dict[str, Any] | None = None
+    extra_parameters: dict[str, Any] | None = None
 
     def as_parameters(self) -> dict[str, Any]:
         params: dict[str, Any] = {
@@ -52,6 +53,8 @@ class Scenario:
         }
         if self.model_config is not None:
             params["model_config"] = self.model_config
+        if self.extra_parameters:
+            params.update(self.extra_parameters)
         return params
 
 
