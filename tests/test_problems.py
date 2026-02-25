@@ -89,3 +89,11 @@ def test_base_problem_spec_default_pareto_objectives() -> None:
 def test_base_problem_spec_supports_scoring_strategy() -> None:
     spec = _BaseSpec()
     assert spec.supports_scoring_strategy("loss_based") is True
+
+
+def test_base_problem_spec_validate_uses_param_schema() -> None:
+    spec = _BaseSpec()
+    assert spec.validate({"dim": 1}) == []
+    errors = spec.validate({"dim": 0})
+    assert errors
+    assert "greater than 0" in errors[0]
