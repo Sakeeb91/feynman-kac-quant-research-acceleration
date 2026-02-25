@@ -461,3 +461,29 @@ def test_compute_comparison_matched_deltas(tmp_path) -> None:
         "delta_pct_progress",
     ]:
         assert key in row
+
+
+def test_compute_comparison_summary_stats(tmp_path) -> None:
+    store = MetadataStore(tmp_path / "experiments.db")
+    run_a = "56565656-1111-1111-1111-111111111111"
+    run_b = "78787878-2222-2222-2222-222222222222"
+    _insert_batch(store, tmp_path, batch_run_id=run_a, created_at="2025-01-01T00:00:00+00:00")
+    _insert_batch(store, tmp_path, batch_run_id=run_b, created_at="2025-01-02T00:00:00+00:00")
+
+    shared = {"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"}
+    only_left = {"dim": 7, "volatility": 0.2, "correlation": 0.0, "option_type": "call"}
+    only_right = {"dim": 9, "volatility": 0.2, "correlation": 0.0, "option_type": "call"}
+    _insert_comp_scenario(store, batch_run_id=run_a, scenario_payload=shared, status="completed", score=0.2)
+    _insert_comp_scenario(store, batch_run_id=run_b, scenario_payload=shared, status="completed", score=0.3)
+    _insert_comp_scenario(store, batch_run_id=run_a, scenario_payload=only_left, status="completed", score=0.2)
+    _insert_comp_scenario(store, batch_run_id=run_b, scenario_payload=only_right, status="completed", score=0.1)
+
+    comparison = compute_comparison(store, run_a, run_b)
+    store.close()
+
+    summary = comparison["summary"]
+    assert summary["matched_count"] == 1
+    assert summary["only_a_count"] == 1
+    assert summary["only_b_count"] == 1
+    assert "a_wins" in summary
+    assert "b_wins" in summary
