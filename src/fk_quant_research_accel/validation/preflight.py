@@ -79,6 +79,19 @@ def validate_manifest(manifest: ExperimentManifest) -> list[PreflightError]:
             )
         )
 
+    problem_grid = _grid_config_for_problem(manifest)
+    problem_scenarios = problem_spec.generate_scenarios(problem_grid, [{}])
+    for scenario in problem_scenarios:
+        scenario_params = {key: value for key, value in scenario.items() if key != "model_config"}
+        for message in problem_spec.validate(scenario_params):
+            errors.append(
+                PreflightError(
+                    field="problem.validation",
+                    value=scenario_params,
+                    message=message,
+                )
+            )
+
     _append_messages(
         errors=errors,
         field="scenario_grid.volatilities",
