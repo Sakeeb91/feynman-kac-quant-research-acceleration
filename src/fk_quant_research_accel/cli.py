@@ -19,8 +19,21 @@ from .orchestrator import (
     generate_black_scholes_scenarios,
     generate_scenarios_from_manifest,
 )
-from .run_analysis.formatters import emit_csv, emit_json, emit_runs_table, get_effective_format
+from .run_analysis.comparison import compute_comparison
+from .run_analysis.formatters import (
+    emit_comparison_csv,
+    emit_comparison_json,
+    emit_comparison_table,
+    emit_csv,
+    emit_json,
+    emit_runs_table,
+    emit_show_run,
+    emit_show_run_csv,
+    emit_show_run_json,
+    get_effective_format,
+)
 from .run_analysis.queries import list_runs_with_metrics
+from .run_analysis.resolver import resolve_run_id
 from .reporting import write_csv
 from .store.metadata import MetadataStore
 from .validation import validate_manifest
