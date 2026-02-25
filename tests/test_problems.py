@@ -241,6 +241,22 @@ def test_black_scholes_generate_scenarios_scalar_correlations() -> None:
     assert scenarios[0]["model_config"] == {"architecture": "default"}
 
 
+def test_black_scholes_generate_scenarios_multiplies_model_configs() -> None:
+    spec = BlackScholesSpec()
+    scenarios = spec.generate_scenarios(
+        {
+            "dimensions": [2],
+            "volatilities": [0.2],
+            "correlations": [0.3],
+            "option_types": ["call", "put"],
+        },
+        [{"architecture": "a"}, {"architecture": "b"}],
+    )
+    assert len(scenarios) == 4
+    architectures = {scenario["model_config"]["architecture"] for scenario in scenarios}
+    assert architectures == {"a", "b"}
+
+
 def test_black_scholes_generate_scenarios_matrix_correlation() -> None:
     spec = BlackScholesSpec()
     correlation = [
