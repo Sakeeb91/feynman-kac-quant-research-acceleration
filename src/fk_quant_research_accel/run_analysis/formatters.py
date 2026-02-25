@@ -199,3 +199,64 @@ def emit_comparison_csv(comparison: dict[str, Any]) -> None:
     writer = csv.DictWriter(sys.stdout, fieldnames=list(rows[0].keys()))
     writer.writeheader()
     writer.writerows(rows)
+
+
+def emit_show_run(
+    batch_run: dict[str, Any],
+    scenarios: list[dict[str, Any]],
+    *,
+    verbose: bool = False,
+    console: Console | None = None,
+) -> None:
+    active_console = console or Console(stderr=True)
+    active_console.print(
+        Panel(
+            (
+                f"Run ID: {batch_run.get('batch_run_id', '--')}\n"
+                f"Created: {batch_run.get('created_at', '--')}\n"
+                f"Status: {batch_run.get('status', '--')}\n"
+                f"Git SHA: {batch_run.get('git_sha', '--')}\n"
+                f"Scenario Count: {batch_run.get('scenario_count', '--')}"
+            ),
+            title="Run Details",
+            border_style="blue",
+        )
+    )
+
+    table = Table(title="Scenario Details")
+    table.add_column("Scenario ID", no_wrap=True)
+    table.add_column("Dim", justify="right")
+    table.add_column("Vol", justify="right")
+    table.add_column("Corr", justify="right")
+    table.add_column("Type")
+    table.add_column("Status", justify="center")
+    table.add_column("Score", justify="right")
+    table.add_column("Health", justify="center")
+    table.add_column("Train Loss", justify="right")
+    table.add_column("Grad Norm", justify="right")
+    table.add_column("Progress", justify="right")
+    if verbose:
+        table.add_column("Error")
+        table.add_column("Checkpoint")
+
+    for scenario_row in scenarios:
+        scenario_payload = _parse_json_object(scenario_row.get("scenario_json"))
+        result_payload = _parse_json_object(scenario_row.get("result_json"))
+        cells: list[Any] = [
+            str(scenario_row.get("scenario_run_id", "--"))[:12],
+            str(scenario_payload.get("dim", "--")),
+            _format_score(scenario_payload.get("volatility")),
+            str(scenario_payload.get("correlation", "--")),
+            str(scenario_payload.get("option_type", "--")),
+            str(scenario_row.get("status", "--")),
+            _format_score(result_payload.get("score")),
+            _format_health(result_payload.get("convergence_health")),
+            _format_score(result_payload.get("train_loss")),
+            _format_score(result_payload.get("grad_norm")),
+            _format_score(result_payload.get("progress")),
+        ]
+        if verbose:
+            cells.append(str(scenario_row.get("error_message", "--")))
+            cells.append(str(scenario_row.get("checkpoint_path", "--")))
+        table.add_row(*cells)
+    active_console.print(table)
