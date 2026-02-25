@@ -169,6 +169,7 @@ def run_batch_command(
     experiment_manifest_hash: str | None = None
     effective_scoring_config = ScoringConfig()
     backend_base_url: str | None = base_url
+    selected_problem_id = "black_scholes"
 
     if manifest is not None:
         try:
@@ -202,6 +203,7 @@ def run_batch_command(
         )
         config = _batch_config_from_manifest(experiment)
         backend_base_url = experiment.backend_url
+        selected_problem_id = experiment.problem_id
         effective_poll_seconds = experiment.batch_config.poll_seconds
         effective_max_wait_seconds = experiment.batch_config.max_wait_seconds
         artifacts_dir = experiment.output.artifacts_dir
