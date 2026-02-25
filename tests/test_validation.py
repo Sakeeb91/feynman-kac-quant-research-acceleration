@@ -458,3 +458,39 @@ def test_preflight_rejects_unsupported_scoring_strategy(monkeypatch) -> None:
     errors = validate_manifest(_valid_manifest())
 
     assert any(error.field == "scoring.strategy" for error in errors)
+
+
+def test_preflight_delegates_problem_validation(monkeypatch) -> None:
+    observed = {"validate_calls": 0}
+
+    class _DelegatingSpec:
+        def supports_scoring_strategy(self, strategy: str) -> bool:
+            del strategy
+            return True
+
+        def generate_scenarios(self, grid_config, model_configs):
+            del model_configs
+            return [
+                {
+                    "dim": grid_config["dimensions"][0],
+                    "volatility": grid_config["volatilities"][0],
+                    "correlation": grid_config["correlations"][0],
+                    "option_type": grid_config["option_types"][0],
+                }
+            ]
+
+        def validate(self, params):
+            observed["validate_calls"] += 1
+            del params
+            return ["delegated-error"]
+
+    monkeypatch.setattr(
+        "fk_quant_research_accel.validation.preflight.get_problem_spec",
+        lambda _: _DelegatingSpec(),
+    )
+
+    errors = validate_manifest(_valid_manifest())
+
+    assert observed["validate_calls"] == 1
+    assert any(error.field == "problem.validation" for error in errors)
+    assert any(error.message == "delegated-error" for error in errors)
