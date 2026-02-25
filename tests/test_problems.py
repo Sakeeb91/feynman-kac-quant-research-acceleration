@@ -10,6 +10,11 @@ from fk_quant_research_accel.problems.harmonic_oscillator import (
     HarmonicOscillatorParams,
     HarmonicOscillatorSpec,
 )
+from fk_quant_research_accel.problems import (
+    BaseProblemSpec as ExportedBaseProblemSpec,
+    ProblemParams as ExportedProblemParams,
+    ProblemSpec as ExportedProblemSpec,
+)
 from fk_quant_research_accel.problems.protocol import BaseProblemSpec, ProblemParams, ProblemSpec
 from fk_quant_research_accel.problems.registry import (
     _PROBLEM_REGISTRY,
@@ -21,6 +26,12 @@ from fk_quant_research_accel.problems.registry import (
 
 def test_problem_params_is_pydantic_model() -> None:
     assert issubclass(ProblemParams, BaseModel)
+
+
+def test_package_exports_protocol_types() -> None:
+    assert ExportedProblemSpec is ProblemSpec
+    assert ExportedBaseProblemSpec is BaseProblemSpec
+    assert ExportedProblemParams is ProblemParams
 
 
 class _ProtocolStub:
