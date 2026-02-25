@@ -254,6 +254,7 @@ def run_batch_command(
             client=async_client,
             scenarios=scenarios,
             batch_config=config,
+            problem_id=selected_problem_id,
             poll_seconds=effective_poll_seconds,
             max_wait_seconds=effective_max_wait_seconds,
             concurrency_limit=concurrency,
