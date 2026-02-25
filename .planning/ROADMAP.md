@@ -123,10 +123,11 @@ Plans:
   1. Researcher can export the winning run via `export-model` CLI command, producing a self-contained directory
   2. Model package contains checkpoint/weights, exact training config, scenario config, seed, and full environment metadata -- enough to reproduce the training run from scratch
   3. Model package includes a validation summary (final metrics, convergence health, acceptance threshold results) and a manifest describing all contents
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 07-01: TBD
+- [ ] 07-01-PLAN.md -- Pydantic schemas (ModelPackageManifest, PackageMetrics, AcceptanceResult), acceptance checks, and ModelPackager assembler (TDD)
+- [ ] 07-02-PLAN.md -- export-model CLI command with run selector resolution, Rich output, zip support, and integration tests
 
 ## Progress
 
@@ -141,7 +142,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 4. Scoring, Diagnostics, and Leaderboards | 0/2 | Planned | - |
 | 5. Run Analysis CLI | 0/2 | Planned | - |
 | 6. Extensibility | 0/2 | Planned | - |
-| 7. Model Packaging | 0/1 | Not started | - |
+| 7. Model Packaging | 0/2 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-19*
