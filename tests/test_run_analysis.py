@@ -487,3 +487,20 @@ def test_compute_comparison_summary_stats(tmp_path) -> None:
     assert summary["only_b_count"] == 1
     assert "a_wins" in summary
     assert "b_wins" in summary
+
+
+def test_compute_comparison_status_mismatch_flag(tmp_path) -> None:
+    store = MetadataStore(tmp_path / "experiments.db")
+    run_a = "90909090-1111-1111-1111-111111111111"
+    run_b = "91919191-2222-2222-2222-222222222222"
+    _insert_batch(store, tmp_path, batch_run_id=run_a, created_at="2025-01-01T00:00:00+00:00")
+    _insert_batch(store, tmp_path, batch_run_id=run_b, created_at="2025-01-02T00:00:00+00:00")
+
+    scenario = {"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"}
+    _insert_comp_scenario(store, batch_run_id=run_a, scenario_payload=scenario, status="completed", score=0.2)
+    _insert_comp_scenario(store, batch_run_id=run_b, scenario_payload=scenario, status="failed", score=None)
+
+    comparison = compute_comparison(store, run_a, run_b, include_all_status=True)
+    store.close()
+
+    assert comparison["matched"][0]["status_mismatch"] is True
