@@ -46,8 +46,9 @@ class MetadataStore:
                 scenario_count,
                 artifact_path,
                 concurrency_limit,
-                manifest_hash
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                manifest_hash,
+                problem_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 batch_run_id,
