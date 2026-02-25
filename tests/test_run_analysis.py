@@ -16,6 +16,7 @@ from fk_quant_research_accel.run_analysis.formatters import (
 )
 from fk_quant_research_accel.run_analysis.comparison import (
     align_scenarios,
+    compute_comparison,
     delta_abs,
     delta_pct,
 )
@@ -63,6 +64,41 @@ def _insert_scenario(
         scenario_run_id=scenario_id,
         status=status,
         result_json=json.dumps({"status": status, "score": score}),
+        score=score,
+        completed_at=datetime.now(UTC).isoformat(),
+    )
+
+
+def _insert_comp_scenario(
+    store: MetadataStore,
+    *,
+    batch_run_id: str,
+    scenario_payload: dict[str, object],
+    status: str,
+    score: float | None,
+    train_loss: float | None = None,
+    grad_norm: float | None = None,
+    progress: float | None = None,
+) -> None:
+    scenario_id = f"scenario-{batch_run_id}-{datetime.now(UTC).timestamp()}"
+    store.create_scenario_run(
+        scenario_run_id=scenario_id,
+        batch_run_id=batch_run_id,
+        scenario_json=json.dumps(scenario_payload),
+        created_at=datetime.now(UTC).isoformat(),
+    )
+    store.persist_scenario_result(
+        scenario_run_id=scenario_id,
+        status=status,
+        result_json=json.dumps(
+            {
+                "status": status,
+                "score": score,
+                "train_loss": train_loss,
+                "grad_norm": grad_norm,
+                "progress": progress,
+            }
+        ),
         score=score,
         completed_at=datetime.now(UTC).isoformat(),
     )
@@ -370,3 +406,58 @@ def test_align_scenarios_model_config_key() -> None:
     assert len(matched) == 1
     assert len(only_a) == 0
     assert len(only_b) == 1
+
+
+def test_compute_comparison_matched_deltas(tmp_path) -> None:
+    store = MetadataStore(tmp_path / "experiments.db")
+    run_a = "12121212-1111-1111-1111-111111111111"
+    run_b = "34343434-2222-2222-2222-222222222222"
+    _insert_batch(store, tmp_path, batch_run_id=run_a, created_at="2025-01-01T00:00:00+00:00")
+    _insert_batch(store, tmp_path, batch_run_id=run_b, created_at="2025-01-02T00:00:00+00:00")
+
+    scenario = {"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"}
+    _insert_comp_scenario(
+        store,
+        batch_run_id=run_a,
+        scenario_payload=scenario,
+        status="completed",
+        score=0.2,
+        train_loss=0.2,
+        grad_norm=0.3,
+        progress=1.0,
+    )
+    _insert_comp_scenario(
+        store,
+        batch_run_id=run_b,
+        scenario_payload=scenario,
+        status="completed",
+        score=0.3,
+        train_loss=0.4,
+        grad_norm=0.5,
+        progress=0.9,
+    )
+
+    comparison = compute_comparison(store, run_a, run_b)
+    store.close()
+
+    assert len(comparison["matched"]) == 1
+    row = comparison["matched"][0]
+    for key in [
+        "run_a_score",
+        "run_b_score",
+        "delta_abs_score",
+        "delta_pct_score",
+        "run_a_train_loss",
+        "run_b_train_loss",
+        "delta_abs_train_loss",
+        "delta_pct_train_loss",
+        "run_a_grad_norm",
+        "run_b_grad_norm",
+        "delta_abs_grad_norm",
+        "delta_pct_grad_norm",
+        "run_a_progress",
+        "run_b_progress",
+        "delta_abs_progress",
+        "delta_pct_progress",
+    ]:
+        assert key in row
