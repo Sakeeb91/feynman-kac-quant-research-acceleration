@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
 class ProblemParams(BaseModel):
@@ -59,7 +59,10 @@ class BaseProblemSpec:
         raise NotImplementedError
 
     def validate(self, params: dict[str, Any]) -> list[str]:
-        del params
+        try:
+            self.param_schema.model_validate(params)
+        except ValidationError as exc:
+            return [str(exc)]
         return []
 
     def default_scorer(self, record: dict[str, Any]) -> float:
