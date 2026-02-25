@@ -99,3 +99,10 @@ def _migrate_v1_to_v2(conn: sqlite3.Connection) -> None:
 def _migrate_v2_to_v3(conn: sqlite3.Connection) -> None:
     """Add manifest hash metadata column for run analysis filtering."""
     conn.execute("ALTER TABLE batch_runs ADD COLUMN manifest_hash TEXT")
+
+
+def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
+    """Add problem_id metadata column for extensible problem dispatch."""
+    conn.execute(
+        "ALTER TABLE batch_runs ADD COLUMN problem_id TEXT DEFAULT 'black_scholes'"
+    )
