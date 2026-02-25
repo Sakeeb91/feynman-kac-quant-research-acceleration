@@ -9,9 +9,11 @@ from rich.console import Console
 
 from fk_quant_research_accel.store.metadata import MetadataStore
 from fk_quant_research_accel.run_analysis.formatters import (
+    emit_comparison_table,
     emit_csv,
     emit_json,
     emit_runs_table,
+    emit_show_run,
     get_effective_format,
 )
 from fk_quant_research_accel.run_analysis.comparison import (
@@ -544,3 +546,63 @@ def test_compute_comparison_includes_all_with_flag(tmp_path) -> None:
     store.close()
 
     assert len(comparison["matched"]) == 2
+
+
+def test_emit_comparison_table_renders() -> None:
+    comparison = {
+        "matched": [
+            {
+                "scenario": {"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"},
+                "run_a_score": 0.1,
+                "run_b_score": 0.2,
+                "delta_abs_score": -0.1,
+                "delta_pct_score": -50.0,
+                "run_a_status": "completed",
+                "run_b_status": "completed",
+                "status_mismatch": False,
+            }
+        ],
+        "only_a": [],
+        "only_b": [],
+        "summary": {"matched_count": 1, "only_a_count": 0, "only_b_count": 0, "a_wins": 1, "b_wins": 0},
+    }
+    output = StringIO()
+    console = Console(file=output, force_terminal=True)
+    emit_comparison_table(comparison, console=console)
+    assert "Matched" in output.getvalue()
+
+
+def test_emit_show_run_renders() -> None:
+    batch = {
+        "batch_run_id": "run-1",
+        "created_at": "2025-01-01T00:00:00+00:00",
+        "status": "completed",
+        "git_sha": "abc123",
+        "scenario_count": 1,
+        "config_json": json.dumps({"n_steps": 40}),
+    }
+    scenarios = [
+        {
+            "scenario_run_id": "scenario-1",
+            "scenario_json": json.dumps(
+                {"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"}
+            ),
+            "result_json": json.dumps(
+                {
+                    "status": "completed",
+                    "score": 0.1,
+                    "convergence_health": "healthy",
+                    "train_loss": 0.1,
+                    "grad_norm": 0.2,
+                    "progress": 1.0,
+                }
+            ),
+            "status": "completed",
+            "error_message": None,
+            "checkpoint_path": None,
+        }
+    ]
+    output = StringIO()
+    console = Console(file=output, force_terminal=True)
+    emit_show_run(batch, scenarios, console=console)
+    assert "Run Details" in output.getvalue()
