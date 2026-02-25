@@ -647,3 +647,31 @@ def test_emit_show_run_json_output(capsys) -> None:
     parsed = json.loads(captured.out)
     assert parsed["batch_run"]["batch_run_id"] == "run-1"
     assert parsed["scenarios"][0]["scenario_run_id"] == "scenario-1"
+
+
+def test_emit_show_run_csv_output(capsys) -> None:
+    scenarios = [
+        {
+            "scenario_run_id": "scenario-1",
+            "status": "completed",
+            "scenario_json": json.dumps(
+                {"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"}
+            ),
+            "result_json": json.dumps(
+                {
+                    "score": 0.1,
+                    "convergence_health": "healthy",
+                    "train_loss": 0.1,
+                    "grad_norm": 0.2,
+                    "progress": 1.0,
+                }
+            ),
+            "error_message": None,
+            "checkpoint_path": "/tmp/checkpoint.pt",
+        }
+    ]
+    emit_show_run_csv(scenarios)
+    captured = capsys.readouterr()
+    lines = [line.strip() for line in captured.out.strip().splitlines()]
+    assert "scenario_run_id" in lines[0]
+    assert "scenario-1" in lines[1]
