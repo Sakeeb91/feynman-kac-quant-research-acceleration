@@ -320,3 +320,17 @@ def test_harmonic_oscillator_validate_invalid_params() -> None:
         }
     )
     assert errors
+
+
+def test_get_problem_spec_returns_black_scholes_builtin() -> None:
+    spec = get_problem_spec("black_scholes")
+    assert isinstance(spec, BlackScholesSpec)
+
+
+def test_get_problem_spec_returns_harmonic_oscillator_builtin() -> None:
+    spec = get_problem_spec("harmonic_oscillator")
+    assert isinstance(spec, HarmonicOscillatorSpec)
+
+
+def test_list_problem_ids_returns_builtin_ids() -> None:
+    assert list_problem_ids() == ["black_scholes", "harmonic_oscillator"]
