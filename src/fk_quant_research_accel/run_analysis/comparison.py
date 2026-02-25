@@ -32,12 +32,6 @@ def delta_pct(a: float | None, b: float | None) -> float | None:
     return (absolute / abs(base)) * 100.0
 
 
-def _normalize_value(value: Any) -> Any:
-    if isinstance(value, (list, dict)):
-        return json.dumps(value, sort_keys=True)
-    return value
-
-
 def _scenario_key(scenario_json: str) -> str:
     payload = json.loads(scenario_json)
     return json.dumps(payload, sort_keys=True)
