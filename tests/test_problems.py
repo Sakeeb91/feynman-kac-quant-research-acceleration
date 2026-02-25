@@ -126,6 +126,13 @@ def test_base_problem_spec_validate_uses_param_schema() -> None:
     assert "greater than 0" in errors[0]
 
 
+def test_base_problem_spec_validate_reports_type_errors() -> None:
+    spec = _BaseSpec()
+    errors = spec.validate({"dim": "bad"})
+    assert errors
+    assert "valid integer" in errors[0]
+
+
 @pytest.fixture(autouse=True)
 def _clear_problem_registry() -> None:
     _PROBLEM_REGISTRY.clear()
