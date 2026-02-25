@@ -361,6 +361,20 @@ def test_resume_batch_help() -> None:
         assert flag in result.stdout
 
 
+def test_compare_runs_help() -> None:
+    result = runner.invoke(app, ["compare-runs", "--help"])
+    assert result.exit_code == 0
+    for token in ["--db-path", "--all-status", "--format", "--verbose"]:
+        assert token in result.stdout
+
+
+def test_show_run_help() -> None:
+    result = runner.invoke(app, ["show-run", "--help"])
+    assert result.exit_code == 0
+    for token in ["--db-path", "--format", "--verbose"]:
+        assert token in result.stdout
+
+
 def test_cli_manifest_loads_and_validates(monkeypatch, tmp_path) -> None:
     captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
 
