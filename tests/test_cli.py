@@ -1010,6 +1010,16 @@ def test_compare_runs_table_output(compare_db: tuple[str, str, str]) -> None:
     assert result.exit_code == 0
 
 
+def test_compare_runs_csv_output(compare_db: tuple[str, str, str]) -> None:
+    db_path, run_a, run_b = compare_db
+    result = runner.invoke(
+        app,
+        ["compare-runs", run_a, run_b, "--db-path", db_path, "--format", "csv"],
+    )
+    assert result.exit_code == 0
+    assert "run_a_score" in result.stdout
+
+
 def test_compare_runs_resolves_latest(compare_db: tuple[str, str, str]) -> None:
     db_path, _, _ = compare_db
     result = runner.invoke(
@@ -1071,6 +1081,16 @@ def test_show_run_table_output(compare_db: tuple[str, str, str]) -> None:
         ["show-run", run_a, "--db-path", db_path, "--format", "table"],
     )
     assert result.exit_code == 0
+
+
+def test_show_run_csv_output(compare_db: tuple[str, str, str]) -> None:
+    db_path, run_a, _ = compare_db
+    result = runner.invoke(
+        app,
+        ["show-run", run_a, "--db-path", db_path, "--format", "csv"],
+    )
+    assert result.exit_code == 0
+    assert "scenario_run_id" in result.stdout
 
 
 def test_show_run_latest_selector(compare_db: tuple[str, str, str]) -> None:
