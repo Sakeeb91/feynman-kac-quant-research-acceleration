@@ -156,6 +156,7 @@ def test_metadata_store_batch_roundtrip(tmp_path) -> None:
     assert row is not None
     assert row["batch_run_id"] == batch_run_id
     assert row["scenario_count"] == 2
+    assert row["problem_id"] == "black_scholes"
 
 
 def test_metadata_store_persists_batch_concurrency_limit(tmp_path) -> None:
