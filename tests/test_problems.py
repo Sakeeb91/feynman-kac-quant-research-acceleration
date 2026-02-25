@@ -277,3 +277,46 @@ def test_black_scholes_validate_uses_domain_constraints() -> None:
 def test_black_scholes_default_scorer_uses_train_loss() -> None:
     spec = BlackScholesSpec()
     assert spec.default_scorer({"status": "completed", "train_loss": 0.05}) == 0.05
+
+
+def test_harmonic_oscillator_generate_scenarios_cross_product() -> None:
+    spec = HarmonicOscillatorSpec()
+    scenarios = spec.generate_scenarios(
+        {
+            "dimensions": [1, 2],
+            "omegas": [0.5, 1.0],
+            "masses": [1.0],
+            "potential_types": ["quadratic"],
+        },
+        [{"architecture": "default"}],
+    )
+
+    assert len(scenarios) == 4
+    assert {scenario["dim"] for scenario in scenarios} == {1, 2}
+    assert {scenario["omega"] for scenario in scenarios} == {0.5, 1.0}
+
+
+def test_harmonic_oscillator_validate_valid_params() -> None:
+    spec = HarmonicOscillatorSpec()
+    errors = spec.validate(
+        {
+            "dim": 1,
+            "omega": 1.0,
+            "mass": 1.0,
+            "potential_type": "quadratic",
+        }
+    )
+    assert errors == []
+
+
+def test_harmonic_oscillator_validate_invalid_params() -> None:
+    spec = HarmonicOscillatorSpec()
+    errors = spec.validate(
+        {
+            "dim": 0,
+            "omega": 0,
+            "mass": -1,
+            "potential_type": "quadratic",
+        }
+    )
+    assert errors
