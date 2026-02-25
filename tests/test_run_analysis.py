@@ -9,11 +9,15 @@ from rich.console import Console
 
 from fk_quant_research_accel.store.metadata import MetadataStore
 from fk_quant_research_accel.run_analysis.formatters import (
+    emit_comparison_csv,
+    emit_comparison_json,
     emit_comparison_table,
     emit_csv,
     emit_json,
     emit_runs_table,
     emit_show_run,
+    emit_show_run_csv,
+    emit_show_run_json,
     get_effective_format,
 )
 from fk_quant_research_accel.run_analysis.comparison import (
@@ -606,3 +610,16 @@ def test_emit_show_run_renders() -> None:
     console = Console(file=output, force_terminal=True)
     emit_show_run(batch, scenarios, console=console)
     assert "Run Details" in output.getvalue()
+
+
+def test_emit_comparison_json_output(capsys) -> None:
+    comparison = {
+        "matched": [{"run_a_score": 0.1, "run_b_score": 0.2}],
+        "only_a": [],
+        "only_b": [],
+        "summary": {"matched_count": 1, "only_a_count": 0, "only_b_count": 0, "a_wins": 1, "b_wins": 0},
+    }
+    emit_comparison_json(comparison)
+    captured = capsys.readouterr()
+    parsed = json.loads(captured.out)
+    assert parsed["summary"]["matched_count"] == 1
