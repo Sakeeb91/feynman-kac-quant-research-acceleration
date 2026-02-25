@@ -31,6 +31,7 @@ def _apply_migrations(conn: sqlite3.Connection, current_version: int) -> None:
         0: _migrate_v0_to_v1,
         1: _migrate_v1_to_v2,
         2: _migrate_v2_to_v3,
+        3: _migrate_v3_to_v4,
     }
     for version in range(current_version, CURRENT_SCHEMA_VERSION):
         migration = migrations.get(version)
