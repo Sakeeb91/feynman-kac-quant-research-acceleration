@@ -56,6 +56,19 @@ def validate_manifest(manifest: ExperimentManifest) -> list[PreflightError]:
 
     grid = manifest.scenario_grid
 
+    scoring_strategy = manifest.scoring.strategy.value
+    if not problem_spec.supports_scoring_strategy(scoring_strategy):
+        errors.append(
+            PreflightError(
+                field="scoring.strategy",
+                value=scoring_strategy,
+                message=(
+                    f"Problem type '{manifest.problem_id}' does not support scoring strategy "
+                    f"'{scoring_strategy}'"
+                ),
+            )
+        )
+
     _append_messages(
         errors=errors,
         field="scenario_grid.volatilities",
