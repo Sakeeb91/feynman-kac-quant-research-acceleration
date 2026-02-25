@@ -5,6 +5,7 @@ from __future__ import annotations
 import anyio
 from functools import partial
 from pathlib import Path
+from typing import cast
 
 import structlog
 import typer
@@ -21,6 +22,7 @@ from .orchestrator import (
 )
 from .run_analysis.comparison import compute_comparison
 from .run_analysis.formatters import (
+    OutputFormat,
     emit_comparison_csv,
     emit_comparison_json,
     emit_comparison_table,
@@ -40,6 +42,8 @@ from .validation import validate_manifest
 
 app = typer.Typer(name="fk-research", help="FK Quant Research Acceleration Platform")
 
+_ALLOWED_OUTPUT_FORMATS: set[str] = {"table", "json", "csv"}
+
 
 def _parse_int_list(raw: str) -> list[int]:
     return [int(item.strip()) for item in raw.split(",") if item.strip()]
@@ -51,6 +55,14 @@ def _parse_float_list(raw: str) -> list[float]:
 
 def _parse_str_list(raw: str) -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+def _parse_output_format(raw: str | None) -> OutputFormat | None:
+    if raw is None:
+        return None
+    if raw not in _ALLOWED_OUTPUT_FORMATS:
+        raise typer.BadParameter("--format must be one of: table, json, csv")
+    return cast(OutputFormat, raw)
 
 
 def _batch_config_from_manifest(experiment: ExperimentManifest) -> BatchConfig:
@@ -296,8 +308,7 @@ def list_runs_command(
     verbose: bool = typer.Option(False, "--verbose", help="Show additional columns"),
 ) -> None:
     log = structlog.get_logger()
-    if output_format is not None and output_format not in {"table", "json", "csv"}:
-        raise typer.BadParameter("--format must be one of: table, json, csv")
+    parsed_output_format = _parse_output_format(output_format)
 
     store = MetadataStore(db_path)
     try:
@@ -313,7 +324,7 @@ def list_runs_command(
             limit=limit,
             offset=offset,
         )
-        fmt = get_effective_format(output_format)  # type: ignore[arg-type]
+        fmt = get_effective_format(parsed_output_format)
         if fmt == "table":
             emit_runs_table(rows, verbose=verbose)
         elif fmt == "json":
@@ -337,8 +348,7 @@ def compare_runs_command(
     verbose: bool = typer.Option(False, "--verbose"),
 ) -> None:
     log = structlog.get_logger()
-    if output_format is not None and output_format not in {"table", "json", "csv"}:
-        raise typer.BadParameter("--format must be one of: table, json, csv")
+    parsed_output_format = _parse_output_format(output_format)
 
     store = MetadataStore(db_path)
     try:
@@ -350,7 +360,7 @@ def compare_runs_command(
             resolved_b,
             include_all_status=all_status,
         )
-        fmt = get_effective_format(output_format)  # type: ignore[arg-type]
+        fmt = get_effective_format(parsed_output_format)
         if fmt == "table":
             emit_comparison_table(comparison, verbose=verbose)
         elif fmt == "json":
@@ -372,8 +382,7 @@ def show_run_command(
     verbose: bool = typer.Option(False, "--verbose"),
 ) -> None:
     log = structlog.get_logger()
-    if output_format is not None and output_format not in {"table", "json", "csv"}:
-        raise typer.BadParameter("--format must be one of: table, json, csv")
+    parsed_output_format = _parse_output_format(output_format)
 
     store = MetadataStore(db_path)
     try:
@@ -383,7 +392,7 @@ def show_run_command(
             raise ValueError(f"No run found for selector: {run_id}")
         scenarios = store.get_scenario_runs(resolved)
 
-        fmt = get_effective_format(output_format)  # type: ignore[arg-type]
+        fmt = get_effective_format(parsed_output_format)
         if fmt == "table":
             emit_show_run(batch_run, scenarios, verbose=verbose)
         elif fmt == "json":
