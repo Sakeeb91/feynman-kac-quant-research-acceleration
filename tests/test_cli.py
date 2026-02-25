@@ -116,6 +116,44 @@ def _insert_listing_scenario(store: MetadataStore, *, batch_run_id: str, score: 
     )
 
 
+def _insert_compare_scenario(
+    store: MetadataStore,
+    *,
+    batch_run_id: str,
+    scenario_run_id: str,
+    scenario_payload: dict[str, object],
+    status: str,
+    score: float | None,
+    train_loss: float | None = None,
+    grad_norm: float | None = None,
+    progress: float | None = None,
+) -> None:
+    store.create_scenario_run(
+        scenario_run_id=scenario_run_id,
+        batch_run_id=batch_run_id,
+        scenario_json=json.dumps(scenario_payload),
+        created_at="2025-01-01T00:00:00+00:00",
+    )
+    store.persist_scenario_result(
+        scenario_run_id=scenario_run_id,
+        status=status,
+        result_json=json.dumps(
+            {
+                "status": status,
+                "score": score,
+                "train_loss": train_loss,
+                "grad_norm": grad_norm,
+                "progress": progress,
+                "convergence_health": "healthy" if status == "completed" else "exploding",
+            }
+        ),
+        score=score,
+        error_message="failed" if status == "failed" else None,
+        checkpoint_path="/tmp/checkpoint.pt" if status == "completed" else None,
+        completed_at="2025-01-01T00:01:00+00:00",
+    )
+
+
 @pytest.fixture
 def populated_db(tmp_path) -> str:
     db_path = tmp_path / "experiments.db"
@@ -146,6 +184,94 @@ def populated_db(tmp_path) -> str:
     )
     store.close()
     return str(db_path)
+
+
+@pytest.fixture
+def compare_db(tmp_path) -> tuple[str, str, str]:
+    db_path = tmp_path / "compare.db"
+    run_a = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    run_b = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+    store = MetadataStore(db_path)
+    _insert_listing_batch(
+        store,
+        batch_run_id=run_a,
+        created_at="2025-01-01T00:00:00+00:00",
+        status="completed",
+    )
+    _insert_listing_batch(
+        store,
+        batch_run_id=run_b,
+        created_at="2025-01-02T00:00:00+00:00",
+        status="completed",
+    )
+
+    shared_1 = {"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"}
+    shared_2 = {"dim": 10, "volatility": 0.3, "correlation": 0.1, "option_type": "call"}
+    only_a = {"dim": 15, "volatility": 0.4, "correlation": 0.2, "option_type": "put"}
+    only_b = {"dim": 20, "volatility": 0.5, "correlation": 0.3, "option_type": "put"}
+
+    _insert_compare_scenario(
+        store,
+        batch_run_id=run_a,
+        scenario_run_id="a-1",
+        scenario_payload=shared_1,
+        status="completed",
+        score=0.1,
+        train_loss=0.1,
+        grad_norm=0.2,
+        progress=1.0,
+    )
+    _insert_compare_scenario(
+        store,
+        batch_run_id=run_b,
+        scenario_run_id="b-1",
+        scenario_payload=shared_1,
+        status="completed",
+        score=0.2,
+        train_loss=0.2,
+        grad_norm=0.3,
+        progress=1.0,
+    )
+    _insert_compare_scenario(
+        store,
+        batch_run_id=run_a,
+        scenario_run_id="a-2",
+        scenario_payload=shared_2,
+        status="completed",
+        score=0.3,
+        train_loss=0.3,
+        grad_norm=0.4,
+        progress=0.9,
+    )
+    _insert_compare_scenario(
+        store,
+        batch_run_id=run_b,
+        scenario_run_id="b-2",
+        scenario_payload=shared_2,
+        status="completed",
+        score=0.25,
+        train_loss=0.25,
+        grad_norm=0.35,
+        progress=0.95,
+    )
+    _insert_compare_scenario(
+        store,
+        batch_run_id=run_a,
+        scenario_run_id="a-3",
+        scenario_payload=only_a,
+        status="completed",
+        score=0.4,
+    )
+    _insert_compare_scenario(
+        store,
+        batch_run_id=run_b,
+        scenario_run_id="b-3",
+        scenario_payload=only_b,
+        status="completed",
+        score=0.35,
+    )
+    store.close()
+    return str(db_path), run_a, run_b
 
 
 def test_help_includes_program_name_and_log_level() -> None:
