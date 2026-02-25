@@ -260,3 +260,45 @@ def emit_show_run(
             cells.append(str(scenario_row.get("checkpoint_path", "--")))
         table.add_row(*cells)
     active_console.print(table)
+
+
+def emit_show_run_json(batch_run: dict[str, Any], scenarios: list[dict[str, Any]]) -> None:
+    print(
+        json.dumps(
+            {
+                "batch_run": batch_run,
+                "scenarios": scenarios,
+            },
+            indent=2,
+            default=str,
+        )
+    )
+
+
+def emit_show_run_csv(scenarios: list[dict[str, Any]]) -> None:
+    flattened: list[dict[str, Any]] = []
+    for scenario_row in scenarios:
+        scenario_payload = _parse_json_object(scenario_row.get("scenario_json"))
+        result_payload = _parse_json_object(scenario_row.get("result_json"))
+        flattened.append(
+            {
+                "scenario_run_id": scenario_row.get("scenario_run_id"),
+                "status": scenario_row.get("status"),
+                "dim": scenario_payload.get("dim"),
+                "volatility": scenario_payload.get("volatility"),
+                "correlation": scenario_payload.get("correlation"),
+                "option_type": scenario_payload.get("option_type"),
+                "score": result_payload.get("score"),
+                "convergence_health": result_payload.get("convergence_health"),
+                "train_loss": result_payload.get("train_loss"),
+                "grad_norm": result_payload.get("grad_norm"),
+                "progress": result_payload.get("progress"),
+                "error_message": scenario_row.get("error_message"),
+                "checkpoint_path": scenario_row.get("checkpoint_path"),
+            }
+        )
+    if not flattened:
+        return
+    writer = csv.DictWriter(sys.stdout, fieldnames=list(flattened[0].keys()))
+    writer.writeheader()
+    writer.writerows(flattened)
