@@ -10,9 +10,18 @@ from typing import Literal
 from typing import Any
 
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 
 OutputFormat = Literal["table", "json", "csv"]
+
+_HEALTH_STYLES: dict[str, str] = {
+    "healthy": "green",
+    "oscillating": "yellow",
+    "stagnating": "yellow",
+    "exploding": "red",
+}
 
 
 def get_effective_format(
@@ -40,6 +49,32 @@ def _format_score(value: Any) -> str:
     if math.isnan(score):
         return "nan"
     return f"{score:.6f}"
+
+
+def _format_health(health: str | None) -> Text:
+    label = str(health or "--")
+    return Text(label, style=_HEALTH_STYLES.get(label, "white"))
+
+
+def _parse_json_object(raw: str | None) -> dict[str, Any]:
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(parsed, dict):
+        return {}
+    return parsed
+
+
+def _scenario_compact(scenario: dict[str, Any]) -> str:
+    return (
+        f"d={scenario.get('dim', '--')}/"
+        f"v={scenario.get('volatility', '--')}/"
+        f"c={scenario.get('correlation', '--')}/"
+        f"t={scenario.get('option_type', '--')}"
+    )
 
 
 def emit_runs_table(
