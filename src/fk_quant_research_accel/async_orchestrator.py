@@ -179,6 +179,7 @@ async def _submit_and_poll_scenario(
     scenario_run_id: str,
     scenario_dir: Path,
     batch_config: BatchConfig,
+    problem_id: str,
     store_lock: anyio.Lock,
     poll_seconds: float,
     max_wait_seconds: float,
@@ -187,7 +188,7 @@ async def _submit_and_poll_scenario(
 ) -> dict[str, Any]:
     simulation_response, submit_attempts = await _retry_call(
         lambda: client.create_simulation(
-            problem_id="black_scholes",
+            problem_id=problem_id,
             parameters=scenario.as_parameters(),
             training_config=batch_config.to_payload(),
         ),
