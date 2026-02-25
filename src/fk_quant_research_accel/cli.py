@@ -327,6 +327,43 @@ def list_runs_command(
         store.close()
 
 
+@app.command("compare-runs")
+def compare_runs_command(
+    run_a: str = typer.Argument(..., help="First run (UUID, prefix, latest, latest~N)"),
+    run_b: str = typer.Argument(..., help="Second run (UUID, prefix, latest, latest~N)"),
+    db_path: str = typer.Option("artifacts/experiments.db", "--db-path"),
+    all_status: bool = typer.Option(False, "--all-status", help="Include non-completed scenarios"),
+    output_format: str | None = typer.Option(None, "--format"),
+    verbose: bool = typer.Option(False, "--verbose"),
+) -> None:
+    log = structlog.get_logger()
+    if output_format is not None and output_format not in {"table", "json", "csv"}:
+        raise typer.BadParameter("--format must be one of: table, json, csv")
+
+    store = MetadataStore(db_path)
+    try:
+        resolved_a = resolve_run_id(run_a, store)
+        resolved_b = resolve_run_id(run_b, store)
+        comparison = compute_comparison(
+            store,
+            resolved_a,
+            resolved_b,
+            include_all_status=all_status,
+        )
+        fmt = get_effective_format(output_format)  # type: ignore[arg-type]
+        if fmt == "table":
+            emit_comparison_table(comparison, verbose=verbose)
+        elif fmt == "json":
+            emit_comparison_json(comparison)
+        else:
+            emit_comparison_csv(comparison)
+    except ValueError as exc:
+        log.error("compare_runs_failed", run_a=run_a, run_b=run_b, error=str(exc))
+        raise typer.Exit(code=1) from exc
+    finally:
+        store.close()
+
+
 def main() -> None:
     app()
 
