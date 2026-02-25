@@ -14,6 +14,7 @@ from fk_quant_research_accel.run_analysis.formatters import (
     emit_runs_table,
     get_effective_format,
 )
+from fk_quant_research_accel.run_analysis.comparison import delta_abs
 from fk_quant_research_accel.run_analysis.resolver import resolve_run_id
 from fk_quant_research_accel.run_analysis.queries import list_runs_with_metrics
 
@@ -251,3 +252,7 @@ def test_emit_runs_table_renders() -> None:
     rendered = output.getvalue()
     assert "Run ID" in rendered
     assert "Best" in rendered
+
+
+def test_delta_abs_normal() -> None:
+    assert delta_abs(0.5, 0.3) == pytest.approx(0.2)
