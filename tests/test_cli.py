@@ -311,6 +311,9 @@ def test_help_includes_program_name_and_log_level() -> None:
     assert "--log-level" in result.stdout
     assert "run-batch" in result.stdout
     assert "resume-batch" in result.stdout
+    assert "list-runs" in result.stdout
+    assert "compare-runs" in result.stdout
+    assert "show-run" in result.stdout
 
 
 def test_run_batch_help_includes_expected_flags() -> None:
