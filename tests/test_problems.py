@@ -319,6 +319,23 @@ def test_black_scholes_validate_uses_domain_constraints() -> None:
     assert any("dim >= 2" in error for error in errors)
 
 
+def test_black_scholes_validate_checks_correlation_matrix_psd() -> None:
+    spec = BlackScholesSpec()
+    errors = spec.validate(
+        {
+            "dim": 3,
+            "volatility": 0.2,
+            "correlation": [
+                [1.0, 0.9, 0.9],
+                [0.9, 1.0, -0.9],
+                [0.9, -0.9, 1.0],
+            ],
+            "option_type": "call",
+        }
+    )
+    assert any("positive semi-definite" in error.lower() for error in errors)
+
+
 def test_black_scholes_default_scorer_uses_train_loss() -> None:
     spec = BlackScholesSpec()
     assert spec.default_scorer({"status": "completed", "train_loss": 0.05}) == 0.05
