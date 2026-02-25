@@ -398,6 +398,7 @@ async def run_batch_async(
     client: AsyncFKPinnClient,
     scenarios: list[Scenario],
     batch_config: BatchConfig,
+    problem_id: str = "black_scholes",
     poll_seconds: float = 2.0,
     max_wait_seconds: float = 1800.0,
     concurrency_limit: int = 20,
@@ -409,7 +410,7 @@ async def run_batch_async(
     scoring_config: ScoringConfig | None = None,
 ) -> list[dict[str, Any]]:
     effective_scoring_config = scoring_config or ScoringConfig()
-    scorer = get_scorer(effective_scoring_config)
+    scorer = _resolve_scorer(problem_id, effective_scoring_config)
     batch_run_id = str(generate_batch_run_id())
     log = structlog.get_logger().bind(batch_run_id=batch_run_id)
     artifact_store = ArtifactStore(artifacts_dir)
