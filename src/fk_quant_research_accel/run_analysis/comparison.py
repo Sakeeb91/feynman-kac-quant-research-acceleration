@@ -38,15 +38,9 @@ def _normalize_value(value: Any) -> Any:
     return value
 
 
-def _scenario_key(scenario_json: str) -> tuple[Any, Any, Any, Any, Any]:
+def _scenario_key(scenario_json: str) -> str:
     payload = json.loads(scenario_json)
-    return (
-        payload.get("dim"),
-        payload.get("volatility"),
-        _normalize_value(payload.get("correlation")),
-        payload.get("option_type"),
-        _normalize_value(payload.get("model_config")),
-    )
+    return json.dumps(payload, sort_keys=True)
 
 
 def align_scenarios(
