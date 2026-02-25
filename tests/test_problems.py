@@ -10,6 +10,8 @@ from fk_quant_research_accel.problems.harmonic_oscillator import (
     HarmonicOscillatorParams,
     HarmonicOscillatorSpec,
 )
+import fk_quant_research_accel.problems.black_scholes as black_scholes_module
+import fk_quant_research_accel.problems.harmonic_oscillator as harmonic_module
 from fk_quant_research_accel.problems import (
     BaseProblemSpec as ExportedBaseProblemSpec,
     ProblemParams as ExportedProblemParams,
@@ -35,6 +37,11 @@ def test_package_exports_protocol_types() -> None:
     assert ExportedProblemSpec is ProblemSpec
     assert ExportedBaseProblemSpec is BaseProblemSpec
     assert ExportedProblemParams is ProblemParams
+
+
+def test_builtin_modules_define_public_exports() -> None:
+    assert black_scholes_module.__all__ == ["BlackScholesParams", "BlackScholesSpec"]
+    assert harmonic_module.__all__ == ["HarmonicOscillatorParams", "HarmonicOscillatorSpec"]
 
 
 class _ProtocolStub:
