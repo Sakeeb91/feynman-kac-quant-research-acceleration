@@ -418,3 +418,43 @@ def test_preflight_custom_scorer_not_callable() -> None:
 
     assert any(error.field == "scoring.custom_scorer" for error in errors)
     assert any("not callable" in error.message for error in errors)
+
+
+def test_preflight_invalid_problem_id_returns_problem_error() -> None:
+    manifest = _valid_manifest().model_copy(update={"problem_id": "not_a_problem"})
+
+    errors = validate_manifest(manifest)
+
+    assert any(error.field == "problem_id" for error in errors)
+    assert any("Unknown problem_id" in error.message for error in errors)
+
+
+def test_preflight_rejects_unsupported_scoring_strategy(monkeypatch) -> None:
+    class _UnsupportedSpec:
+        def supports_scoring_strategy(self, strategy: str) -> bool:
+            del strategy
+            return False
+
+        def generate_scenarios(self, grid_config, model_configs):
+            del model_configs
+            return [
+                {
+                    "dim": grid_config["dimensions"][0],
+                    "volatility": grid_config["volatilities"][0],
+                    "correlation": grid_config["correlations"][0],
+                    "option_type": grid_config["option_types"][0],
+                }
+            ]
+
+        def validate(self, params):
+            del params
+            return []
+
+    monkeypatch.setattr(
+        "fk_quant_research_accel.validation.preflight.get_problem_spec",
+        lambda _: _UnsupportedSpec(),
+    )
+
+    errors = validate_manifest(_valid_manifest())
+
+    assert any(error.field == "scoring.strategy" for error in errors)
