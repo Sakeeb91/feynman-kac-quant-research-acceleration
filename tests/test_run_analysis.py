@@ -14,7 +14,11 @@ from fk_quant_research_accel.run_analysis.formatters import (
     emit_runs_table,
     get_effective_format,
 )
-from fk_quant_research_accel.run_analysis.comparison import delta_abs, delta_pct
+from fk_quant_research_accel.run_analysis.comparison import (
+    align_scenarios,
+    delta_abs,
+    delta_pct,
+)
 from fk_quant_research_accel.run_analysis.resolver import resolve_run_id
 from fk_quant_research_accel.run_analysis.queries import list_runs_with_metrics
 
@@ -278,3 +282,19 @@ def test_delta_pct_zero_base() -> None:
 
 def test_delta_pct_none() -> None:
     assert delta_pct(None, 0.5) is None
+
+
+def test_align_scenarios_all_matched() -> None:
+    scenarios_a = [
+        {"scenario_json": json.dumps({"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"})},
+        {"scenario_json": json.dumps({"dim": 10, "volatility": 0.3, "correlation": 0.1, "option_type": "call"})},
+    ]
+    scenarios_b = [
+        {"scenario_json": json.dumps({"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"})},
+        {"scenario_json": json.dumps({"dim": 10, "volatility": 0.3, "correlation": 0.1, "option_type": "call"})},
+    ]
+    matched, only_a, only_b = align_scenarios(scenarios_a, scenarios_b)
+
+    assert len(matched) == 2
+    assert only_a == []
+    assert only_b == []
