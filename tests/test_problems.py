@@ -194,3 +194,42 @@ def test_harmonic_oscillator_problem_id() -> None:
 
 def test_harmonic_oscillator_param_schema() -> None:
     assert HarmonicOscillatorSpec().param_schema is HarmonicOscillatorParams
+
+
+def test_black_scholes_generate_scenarios_scalar_correlations() -> None:
+    spec = BlackScholesSpec()
+    scenarios = spec.generate_scenarios(
+        {
+            "dimensions": [2, 5],
+            "volatilities": [0.2],
+            "correlations": [0.3],
+            "option_types": ["call"],
+        },
+        [{"architecture": "default"}],
+    )
+
+    assert len(scenarios) == 2
+    assert scenarios[0]["dim"] == 2
+    assert scenarios[1]["dim"] == 5
+    assert scenarios[0]["model_config"] == {"architecture": "default"}
+
+
+def test_black_scholes_generate_scenarios_matrix_correlation() -> None:
+    spec = BlackScholesSpec()
+    correlation = [
+        [0.3, 0.1, 0.2],
+        [0.1, 0.3, 0.15],
+        [0.2, 0.15, 0.3],
+    ]
+    scenarios = spec.generate_scenarios(
+        {
+            "dimensions": [3],
+            "volatilities": [0.15],
+            "correlations": correlation,
+            "option_types": ["call"],
+        },
+        [{"architecture": "default"}],
+    )
+
+    assert len(scenarios) == 1
+    assert scenarios[0]["correlation"] == correlation
