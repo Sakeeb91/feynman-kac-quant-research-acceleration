@@ -10,6 +10,12 @@ from pydantic import Field
 
 from fk_quant_research_accel.problems.protocol import BaseProblemSpec, ProblemParams
 from fk_quant_research_accel.problems.registry import register_problem
+from fk_quant_research_accel.validation.constraints import (
+    validate_correlation_matrix,
+    validate_dimension_option_compatibility,
+    validate_scalar_correlations,
+    validate_volatility_range,
+)
 
 
 class BlackScholesParams(ProblemParams):
@@ -63,6 +69,32 @@ class BlackScholesSpec(BaseProblemSpec):
                 }
             )
         return scenarios
+
+    def validate(self, params: dict[str, Any]) -> list[str]:
+        errors = super().validate(params)
+
+        dim = params.get("dim")
+        volatility = params.get("volatility")
+        correlation = params.get("correlation")
+        option_type = str(params.get("option_type", "call"))
+
+        if isinstance(volatility, (int, float)):
+            errors.extend(validate_volatility_range([float(volatility)]))
+
+        if isinstance(correlation, list):
+            if correlation and isinstance(correlation[0], list):
+                matrix = cast(list[list[float]], correlation)
+                errors.extend(validate_correlation_matrix(matrix, expected_dim=dim if isinstance(dim, int) else None))
+            else:
+                scalar_values = [float(value) for value in correlation if isinstance(value, (int, float))]
+                errors.extend(validate_scalar_correlations(scalar_values))
+        elif isinstance(correlation, (int, float)):
+            errors.extend(validate_scalar_correlations([float(correlation)]))
+
+        if isinstance(dim, int):
+            errors.extend(validate_dimension_option_compatibility(dim=dim, option_type=option_type))
+
+        return errors
 
 
 register_problem(BlackScholesSpec())
