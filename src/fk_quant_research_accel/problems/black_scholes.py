@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import itertools
 from typing import Any
+from typing import cast
 
 from pydantic import Field
 
@@ -31,8 +33,36 @@ class BlackScholesSpec(BaseProblemSpec):
         grid_config: dict[str, Any],
         model_configs: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
-        del grid_config, model_configs
-        return []
+        dimensions = list(grid_config.get("dimensions", []))
+        volatilities = list(grid_config.get("volatilities", []))
+        correlations = grid_config.get("correlations", [])
+        option_types = list(grid_config.get("option_types", ["call"]))
+
+        if correlations and isinstance(correlations[0], list):
+            correlation_axis: tuple[float | list[list[float]], ...] = (
+                cast(list[list[float]], correlations),
+            )
+        else:
+            correlation_axis = tuple(cast(list[float], correlations))
+
+        scenarios: list[dict[str, Any]] = []
+        for dim, volatility, correlation, option_type, model_config in itertools.product(
+            dimensions,
+            volatilities,
+            correlation_axis,
+            option_types,
+            model_configs,
+        ):
+            scenarios.append(
+                {
+                    "dim": dim,
+                    "volatility": volatility,
+                    "correlation": correlation,
+                    "option_type": option_type,
+                    "model_config": dict(model_config),
+                }
+            )
+        return scenarios
 
 
 register_problem(BlackScholesSpec())
