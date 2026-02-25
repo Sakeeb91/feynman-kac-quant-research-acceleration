@@ -68,6 +68,27 @@ def _parse_output_format(raw: str | None) -> OutputFormat | None:
     return cast(OutputFormat, raw)
 
 
+def _scenario_grid_payload(experiment: ExperimentManifest) -> dict[str, Any]:
+    return {
+        "dimensions": list(experiment.scenario_grid.dimensions),
+        "volatilities": list(experiment.scenario_grid.volatilities),
+        "correlations": experiment.scenario_grid.correlations,
+        "option_types": [option_type.value for option_type in experiment.scenario_grid.option_types],
+    }
+
+
+def _scenario_from_problem_payload(payload: dict[str, Any]) -> Scenario:
+    known = {"dim", "volatility", "correlation", "option_type", "model_config"}
+    return Scenario(
+        dim=int(payload.get("dim", 1)),
+        volatility=float(payload.get("volatility", 0.0)),
+        correlation=cast(float | list[list[float]], payload.get("correlation", 0.0)),
+        option_type=str(payload.get("option_type", "call")),
+        model_config=cast(dict[str, Any] | None, payload.get("model_config")),
+        extra_parameters={k: v for k, v in payload.items() if k not in known},
+    )
+
+
 def _batch_config_from_manifest(experiment: ExperimentManifest) -> BatchConfig:
     return BatchConfig(
         n_steps=experiment.batch_config.n_steps,
