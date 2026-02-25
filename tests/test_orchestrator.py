@@ -342,6 +342,31 @@ def test_run_batch_includes_manifest_hash_when_provided(tmp_path) -> None:
     assert manifest["experiment_manifest_hash"] == manifest_hash
 
 
+def test_run_batch_uses_provided_problem_id_for_submissions(tmp_path) -> None:
+    client = MockFKPinnClient()
+    artifacts_root = tmp_path / "artifacts"
+
+    run_batch(
+        client=client,
+        scenarios=_scenarios(2),
+        batch_config=BatchConfig(),
+        artifacts_dir=artifacts_root,
+        problem_id="harmonic_oscillator",
+    )
+
+    assert client.submitted_problem_ids == ["harmonic_oscillator", "harmonic_oscillator"]
+
+    conn = sqlite3.connect(artifacts_root / "experiments.db")
+    try:
+        stored_problem_id = conn.execute(
+            "SELECT problem_id FROM batch_runs LIMIT 1"
+        ).fetchone()[0]
+    finally:
+        conn.close()
+
+    assert stored_problem_id == "harmonic_oscillator"
+
+
 def test_generate_scenarios_from_manifest_basic() -> None:
     manifest = ExperimentManifest.model_validate(
         {
