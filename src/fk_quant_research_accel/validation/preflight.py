@@ -42,6 +42,18 @@ def _coerce_option_type(option_type: Any) -> str:
 
 def validate_manifest(manifest: ExperimentManifest) -> list[PreflightError]:
     errors: list[PreflightError] = []
+    try:
+        problem_spec = get_problem_spec(manifest.problem_id)
+    except ValueError as exc:
+        errors.append(
+            PreflightError(
+                field="problem_id",
+                value=manifest.problem_id,
+                message=str(exc),
+            )
+        )
+        return errors
+
     grid = manifest.scenario_grid
 
     _append_messages(
