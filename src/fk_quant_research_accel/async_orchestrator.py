@@ -454,6 +454,7 @@ async def run_batch_async(
             str(batch_dir),
             concurrency_limit,
             manifest_hash=experiment_manifest_hash,
+            problem_id=problem_id,
             lock=store_lock,
         )
         log.info(
@@ -482,6 +483,7 @@ async def run_batch_async(
                 store=store,
                 artifact_store=artifact_store,
                 batch_config=batch_config,
+                problem_id=problem_id,
                 execution_items=execution_items,
                 store_lock=store_lock,
                 poll_seconds=poll_seconds,
