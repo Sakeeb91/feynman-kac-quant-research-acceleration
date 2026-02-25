@@ -139,7 +139,8 @@ class _RegisteredSpec(_BaseSpec):
 
 def test_register_problem_and_get_problem_spec() -> None:
     spec = _RegisteredSpec()
-    register_problem(spec)
+    returned = register_problem(spec)
+    assert returned is spec
     assert get_problem_spec("registered") is spec
 
 
