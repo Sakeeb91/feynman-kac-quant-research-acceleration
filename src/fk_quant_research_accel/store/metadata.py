@@ -64,6 +64,7 @@ class MetadataStore:
                 artifact_path,
                 concurrency_limit,
                 manifest_hash,
+                problem_id,
             ),
         )
         self.connection.commit()
