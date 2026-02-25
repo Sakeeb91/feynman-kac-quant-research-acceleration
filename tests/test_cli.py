@@ -1033,3 +1033,44 @@ def test_compare_runs_all_status_flag(compare_db_mixed_status: tuple[str, str, s
     payload = json.loads(result.stdout)
     assert len(payload["matched"]) == 1
     assert payload["matched"][0]["run_a_status"] == "failed"
+
+
+def test_show_run_json_output(compare_db: tuple[str, str, str]) -> None:
+    db_path, run_a, _ = compare_db
+    result = runner.invoke(
+        app,
+        ["show-run", run_a, "--db-path", db_path, "--format", "json"],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["batch_run"]["batch_run_id"] == run_a
+    assert isinstance(payload["scenarios"], list)
+
+
+def test_show_run_table_output(compare_db: tuple[str, str, str]) -> None:
+    db_path, run_a, _ = compare_db
+    result = runner.invoke(
+        app,
+        ["show-run", run_a, "--db-path", db_path, "--format", "table"],
+    )
+    assert result.exit_code == 0
+
+
+def test_show_run_latest_selector(compare_db: tuple[str, str, str]) -> None:
+    db_path, _, run_b = compare_db
+    result = runner.invoke(
+        app,
+        ["show-run", "latest", "--db-path", db_path, "--format", "json"],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["batch_run"]["batch_run_id"] == run_b
+
+
+def test_show_run_not_found(compare_db: tuple[str, str, str]) -> None:
+    db_path, _, _ = compare_db
+    result = runner.invoke(
+        app,
+        ["show-run", "missing-run", "--db-path", db_path, "--format", "json"],
+    )
+    assert result.exit_code == 1
