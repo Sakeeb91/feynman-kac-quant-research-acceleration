@@ -386,6 +386,7 @@ def test_harmonic_oscillator_generate_scenarios_cross_product() -> None:
     assert len(scenarios) == 4
     assert {scenario["dim"] for scenario in scenarios} == {1, 2}
     assert {scenario["omega"] for scenario in scenarios} == {0.5, 1.0}
+    assert {scenario["model_config"]["architecture"] for scenario in scenarios} == {"default"}
 
 
 def test_harmonic_oscillator_generate_scenarios_defaults() -> None:
