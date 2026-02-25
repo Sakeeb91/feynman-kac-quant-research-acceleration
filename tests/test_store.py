@@ -210,6 +210,32 @@ def test_metadata_store_persists_manifest_hash(tmp_path) -> None:
     assert row["manifest_hash"] == "manifest-123"
 
 
+def test_metadata_store_persists_problem_id(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    store = MetadataStore(db_path)
+    batch_run_id = str(generate_batch_run_id())
+
+    store.create_batch_run(
+        batch_run_id=batch_run_id,
+        created_at=datetime.now(UTC).isoformat(),
+        config_json=json.dumps({"n_steps": 10}),
+        manifest_schema_version=1,
+        git_sha="abc123",
+        git_dirty=False,
+        python_version="3.12.0",
+        os_info="test-os",
+        seed=123,
+        scenario_count=2,
+        artifact_path=str(tmp_path / "artifacts" / batch_run_id),
+        problem_id="harmonic_oscillator",
+    )
+    row = store.get_batch_run(batch_run_id)
+    store.close()
+
+    assert row is not None
+    assert row["problem_id"] == "harmonic_oscillator"
+
+
 def test_metadata_store_scenario_persist_flow(tmp_path) -> None:
     db_path = tmp_path / "experiments.db"
     store = MetadataStore(db_path)
