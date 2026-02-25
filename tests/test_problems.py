@@ -5,6 +5,11 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field
 
+from fk_quant_research_accel.problems.black_scholes import BlackScholesParams, BlackScholesSpec
+from fk_quant_research_accel.problems.harmonic_oscillator import (
+    HarmonicOscillatorParams,
+    HarmonicOscillatorSpec,
+)
 from fk_quant_research_accel.problems.protocol import BaseProblemSpec, ProblemParams, ProblemSpec
 from fk_quant_research_accel.problems.registry import (
     _PROBLEM_REGISTRY,
@@ -165,3 +170,27 @@ def test_get_problem_spec_error_suggests_nearest_match() -> None:
     with pytest.raises(ValueError) as exc:
         get_problem_spec("black_shoals")
     assert "Did you mean 'black_scholes'" in str(exc.value)
+
+
+def test_black_scholes_spec_conforms_to_protocol() -> None:
+    assert isinstance(BlackScholesSpec(), ProblemSpec)
+
+
+def test_black_scholes_problem_id() -> None:
+    assert BlackScholesSpec().problem_id == "black_scholes"
+
+
+def test_black_scholes_param_schema() -> None:
+    assert BlackScholesSpec().param_schema is BlackScholesParams
+
+
+def test_harmonic_oscillator_spec_conforms_to_protocol() -> None:
+    assert isinstance(HarmonicOscillatorSpec(), ProblemSpec)
+
+
+def test_harmonic_oscillator_problem_id() -> None:
+    assert HarmonicOscillatorSpec().problem_id == "harmonic_oscillator"
+
+
+def test_harmonic_oscillator_param_schema() -> None:
+    assert HarmonicOscillatorSpec().param_schema is HarmonicOscillatorParams
