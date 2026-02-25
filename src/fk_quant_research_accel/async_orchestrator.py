@@ -26,6 +26,7 @@ from tenacity import wait_exponential_jitter
 
 from .async_client import AsyncFKPinnClient
 from .diagnostics.health import diagnose_convergence
+from .problems import get_problem_spec
 from .models import ReproducibilityInfo
 from .models import RunManifest
 from .models import ScoringConfig
