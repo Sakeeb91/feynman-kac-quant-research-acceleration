@@ -160,7 +160,7 @@ def test_list_problem_ids_sorted() -> None:
 
     register_problem(_Z())
     register_problem(_A())
-    assert list_problem_ids() == ["a", "z"]
+    assert list_problem_ids() == ["a", "black_scholes", "harmonic_oscillator", "z"]
 
 
 def test_get_problem_spec_error_lists_valid_ids() -> None:
