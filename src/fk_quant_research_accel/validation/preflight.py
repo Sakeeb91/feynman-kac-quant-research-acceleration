@@ -7,6 +7,7 @@ from itertools import product
 from typing import Any, cast
 
 from fk_quant_research_accel.models.experiment import ExperimentManifest
+from fk_quant_research_accel.problems import get_problem_spec
 from fk_quant_research_accel.scoring.registry import _import_custom_scorer
 from fk_quant_research_accel.validation.constraints import (
     validate_correlation_matrix,
