@@ -6,7 +6,7 @@ import sqlite3
 from pathlib import Path
 
 
-CURRENT_SCHEMA_VERSION = 3
+CURRENT_SCHEMA_VERSION = 4
 
 
 def init_db(db_path: str | Path) -> sqlite3.Connection:
