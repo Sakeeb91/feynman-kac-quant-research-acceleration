@@ -530,7 +530,6 @@ async def resume_batch_async(
     scoring_config: ScoringConfig | None = None,
 ) -> list[dict[str, Any]]:
     effective_scoring_config = scoring_config or ScoringConfig()
-    scorer = get_scorer(effective_scoring_config)
     log = structlog.get_logger().bind(batch_run_id=batch_run_id)
     artifact_store = ArtifactStore(artifacts_dir)
     effective_db_path = Path(db_path) if db_path is not None else artifact_store.root / "experiments.db"
@@ -541,6 +540,9 @@ async def resume_batch_async(
         batch_row = await _run_store(store.get_batch_run, batch_run_id, lock=store_lock)
         if batch_row is None:
             raise ValueError(f"Batch run '{batch_run_id}' not found")
+
+        resolved_problem_id = problem_id or str(batch_row.get("problem_id") or "black_scholes")
+        scorer = _resolve_scorer(resolved_problem_id, effective_scoring_config)
 
         if force:
             scenario_rows = await _run_store(store.get_scenario_runs, batch_run_id, lock=store_lock)
@@ -573,6 +575,7 @@ async def resume_batch_async(
                 store=store,
                 artifact_store=artifact_store,
                 batch_config=batch_config,
+                problem_id=resolved_problem_id,
                 execution_items=execution_items,
                 store_lock=store_lock,
                 poll_seconds=poll_seconds,
