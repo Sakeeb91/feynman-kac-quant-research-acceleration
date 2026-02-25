@@ -15,6 +15,8 @@ from fk_quant_research_accel.problems import (
     ProblemParams as ExportedProblemParams,
     ProblemSpec as ExportedProblemSpec,
 )
+from fk_quant_research_accel.models.experiment import ExperimentManifest
+from fk_quant_research_accel.orchestrator import generate_scenarios_from_manifest
 from fk_quant_research_accel.problems.protocol import BaseProblemSpec, ProblemParams, ProblemSpec
 from fk_quant_research_accel.problems.registry import (
     _PROBLEM_REGISTRY,
@@ -244,6 +246,38 @@ def test_black_scholes_generate_scenarios_matrix_correlation() -> None:
 
     assert len(scenarios) == 1
     assert scenarios[0]["correlation"] == correlation
+
+
+def test_black_scholes_generation_matches_orchestrator_manifest_path() -> None:
+    manifest = ExperimentManifest.model_validate(
+        {
+            "backend_url": "http://localhost:8000",
+            "scenario_grid": {
+                "dimensions": [2],
+                "volatilities": [0.2],
+                "correlations": [0.3],
+                "option_types": ["call"],
+            },
+            "model_sweep": {
+                "architectures": ["default"],
+            },
+        }
+    )
+    spec = BlackScholesSpec()
+    generated = spec.generate_scenarios(
+        {
+            "dimensions": manifest.scenario_grid.dimensions,
+            "volatilities": manifest.scenario_grid.volatilities,
+            "correlations": manifest.scenario_grid.correlations,
+            "option_types": [opt.value for opt in manifest.scenario_grid.option_types],
+        },
+        [{"architecture": "default"}],
+    )
+    orchestrator_generated = [
+        scenario.as_parameters()
+        for scenario in generate_scenarios_from_manifest(manifest)
+    ]
+    assert generated == orchestrator_generated
 
 
 def test_black_scholes_validate_valid_params() -> None:
