@@ -16,6 +16,7 @@ import structlog
 
 from .client import FKPinnClient
 from .diagnostics.health import diagnose_convergence
+from .problems import get_problem_spec
 from .models import (
     ExperimentManifest,
     ReproducibilityInfo,
@@ -173,6 +174,15 @@ def _build_failure_record(
         "error_message": error_message,
         "checkpoint_path": None,
     }
+
+
+def _resolve_scorer(problem_id: str, scoring_config: ScoringConfig) -> Any:
+    problem_spec = get_problem_spec(problem_id)
+    if scoring_config.custom_scorer is not None:
+        return get_scorer(scoring_config)
+    if problem_spec.supports_scoring_strategy(scoring_config.strategy.value):
+        return get_scorer(scoring_config)
+    return problem_spec.default_scorer
 
 
 def _fetch_checkpoint(
