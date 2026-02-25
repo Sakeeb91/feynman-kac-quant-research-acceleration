@@ -623,3 +623,17 @@ def test_emit_comparison_json_output(capsys) -> None:
     captured = capsys.readouterr()
     parsed = json.loads(captured.out)
     assert parsed["summary"]["matched_count"] == 1
+
+
+def test_emit_comparison_csv_output(capsys) -> None:
+    comparison = {
+        "matched": [{"run_a_score": 0.1, "run_b_score": 0.2, "delta_abs_score": -0.1}],
+        "only_a": [],
+        "only_b": [],
+        "summary": {"matched_count": 1, "only_a_count": 0, "only_b_count": 0, "a_wins": 1, "b_wins": 0},
+    }
+    emit_comparison_csv(comparison)
+    captured = capsys.readouterr()
+    lines = [line.strip() for line in captured.out.strip().splitlines()]
+    assert lines[0] == "run_a_score,run_b_score,delta_abs_score"
+    assert lines[1] == "0.1,0.2,-0.1"
