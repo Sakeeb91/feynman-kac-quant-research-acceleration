@@ -19,5 +19,10 @@ def delta_abs(a: float | None, b: float | None) -> float | None:
 
 
 def delta_pct(a: float | None, b: float | None) -> float | None:
-    del a, b
-    return None
+    absolute = delta_abs(a, b)
+    if absolute is None or b is None:
+        return None
+    base = float(b)
+    if base == 0.0:
+        return None
+    return (absolute / abs(base)) * 100.0
