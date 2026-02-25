@@ -123,3 +123,66 @@ def emit_csv(records: list[dict[str, Any]]) -> None:
     writer = csv.DictWriter(sys.stdout, fieldnames=list(records[0].keys()))
     writer.writeheader()
     writer.writerows(records)
+
+
+def emit_comparison_table(
+    comparison: dict[str, Any],
+    *,
+    verbose: bool = False,
+    console: Console | None = None,
+) -> None:
+    active_console = console or Console(stderr=True)
+    summary = comparison.get("summary", {})
+    active_console.print(
+        Panel(
+            (
+                f"Matched: {summary.get('matched_count', 0)} | "
+                f"Only in A: {summary.get('only_a_count', 0)} | "
+                f"Only in B: {summary.get('only_b_count', 0)} | "
+                f"A wins: {summary.get('a_wins', 0)} | "
+                f"B wins: {summary.get('b_wins', 0)}"
+            ),
+            title="Comparison Summary",
+        )
+    )
+
+    table = Table(title="Run Comparison")
+    table.add_column("Scenario")
+    table.add_column("Score A", justify="right")
+    table.add_column("Score B", justify="right")
+    table.add_column("Delta", justify="right")
+    table.add_column("Delta %", justify="right")
+    table.add_column("Status", justify="center")
+    if verbose:
+        table.add_column("Train Δ", justify="right")
+        table.add_column("Grad Δ", justify="right")
+        table.add_column("Prog Δ", justify="right")
+
+    for row in comparison.get("matched", []):
+        score_delta = row.get("delta_abs_score")
+        delta_style = "white"
+        if isinstance(score_delta, (int, float)):
+            if score_delta < 0:
+                delta_style = "green"
+            elif score_delta > 0:
+                delta_style = "red"
+
+        status_prefix = "[!]" if row.get("status_mismatch") else ""
+        cells = [
+            _scenario_compact(row.get("scenario", {})),
+            _format_score(row.get("run_a_score")),
+            _format_score(row.get("run_b_score")),
+            f"[{delta_style}]{_format_score(score_delta)}[/{delta_style}]",
+            _format_score(row.get("delta_pct_score")),
+            f"{status_prefix}{row.get('run_a_status', '--')}|{row.get('run_b_status', '--')}",
+        ]
+        if verbose:
+            cells.extend(
+                [
+                    _format_score(row.get("delta_abs_train_loss")),
+                    _format_score(row.get("delta_abs_grad_norm")),
+                    _format_score(row.get("delta_abs_progress")),
+                ]
+            )
+        table.add_row(*cells)
+    active_console.print(table)
