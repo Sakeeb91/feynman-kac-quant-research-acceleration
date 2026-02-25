@@ -14,7 +14,7 @@ from fk_quant_research_accel.run_analysis.formatters import (
     emit_runs_table,
     get_effective_format,
 )
-from fk_quant_research_accel.run_analysis.comparison import delta_abs
+from fk_quant_research_accel.run_analysis.comparison import delta_abs, delta_pct
 from fk_quant_research_accel.run_analysis.resolver import resolve_run_id
 from fk_quant_research_accel.run_analysis.queries import list_runs_with_metrics
 
@@ -256,3 +256,25 @@ def test_emit_runs_table_renders() -> None:
 
 def test_delta_abs_normal() -> None:
     assert delta_abs(0.5, 0.3) == pytest.approx(0.2)
+
+
+def test_delta_abs_none_input() -> None:
+    assert delta_abs(None, 0.3) is None
+    assert delta_abs(0.5, None) is None
+
+
+def test_delta_abs_inf_input() -> None:
+    assert delta_abs(float("inf"), 0.3) is None
+    assert delta_abs(0.3, float("inf")) is None
+
+
+def test_delta_pct_normal() -> None:
+    assert delta_pct(0.6, 0.5) == pytest.approx(20.0)
+
+
+def test_delta_pct_zero_base() -> None:
+    assert delta_pct(0.5, 0.0) is None
+
+
+def test_delta_pct_none() -> None:
+    assert delta_pct(None, 0.5) is None
