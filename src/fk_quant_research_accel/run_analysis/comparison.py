@@ -116,15 +116,23 @@ def compute_comparison(
 
     matched_pairs, only_a, only_b = align_scenarios(scenarios_a, scenarios_b)
     matched: list[dict[str, Any]] = []
+    a_wins = 0
+    b_wins = 0
     for row_a, row_b in matched_pairs:
         metrics_a = _extract_metrics(row_a.get("result_json"))
         metrics_b = _extract_metrics(row_b.get("result_json"))
+        score_delta = delta_abs(metrics_a["score"], metrics_b["score"])
+        if score_delta is not None:
+            if score_delta < 0:
+                a_wins += 1
+            elif score_delta > 0:
+                b_wins += 1
         matched.append(
             {
                 "scenario": json.loads(str(row_a.get("scenario_json", "{}"))),
                 "run_a_score": metrics_a["score"],
                 "run_b_score": metrics_b["score"],
-                "delta_abs_score": delta_abs(metrics_a["score"], metrics_b["score"]),
+                "delta_abs_score": score_delta,
                 "delta_pct_score": delta_pct(metrics_a["score"], metrics_b["score"]),
                 "run_a_train_loss": metrics_a["train_loss"],
                 "run_b_train_loss": metrics_b["train_loss"],
@@ -152,7 +160,7 @@ def compute_comparison(
             "matched_count": len(matched),
             "only_a_count": len(only_a),
             "only_b_count": len(only_b),
-            "a_wins": 0,
-            "b_wins": 0,
+            "a_wins": a_wins,
+            "b_wins": b_wins,
         },
     }
