@@ -64,6 +64,15 @@ def _known_statuses() -> set[str]:
     return {status.value for status in ScenarioStatus}
 
 
+def _resolve_scorer(problem_id: str, scoring_config: ScoringConfig) -> ScorerFn:
+    problem_spec = get_problem_spec(problem_id)
+    if scoring_config.custom_scorer is not None:
+        return get_scorer(scoring_config)
+    if problem_spec.supports_scoring_strategy(scoring_config.strategy.value):
+        return get_scorer(scoring_config)
+    return problem_spec.default_scorer
+
+
 def _build_failure_record(
     scenario: Scenario,
     simulation_id: str,
