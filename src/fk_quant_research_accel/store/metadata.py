@@ -29,6 +29,7 @@ class MetadataStore:
         artifact_path: str,
         concurrency_limit: int = 1,
         manifest_hash: str | None = None,
+        problem_id: str = "black_scholes",
     ) -> None:
         self.connection.execute(
             """
