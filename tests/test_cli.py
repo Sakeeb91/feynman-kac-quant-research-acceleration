@@ -464,6 +464,93 @@ def test_run_batch_manifest_uses_async(monkeypatch, tmp_path) -> None:
     assert call.keywords["max_retries"] == 2
 
 
+def test_cli_manifest_routes_problem_id_through_problem_spec(monkeypatch, tmp_path) -> None:
+    captured = _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
+    requested: dict[str, Any] = {}
+
+    class StubSpec:
+        def generate_scenarios(self, grid_config, model_configs):
+            requested["grid_config"] = grid_config
+            requested["model_configs"] = model_configs
+            return [
+                {
+                    "dim": 5,
+                    "volatility": 0.0,
+                    "correlation": 0.0,
+                    "option_type": "call",
+                    "omega": 1.0,
+                    "potential_type": "quadratic",
+                }
+            ]
+
+    manifest_path = _write_manifest(
+        tmp_path / "experiment.yaml",
+        {
+            "problem_id": "harmonic_oscillator",
+            "backend_url": "http://manifest-backend:9000",
+            "scenario_grid": {
+                "dimensions": [5],
+                "volatilities": [0.2],
+                "correlations": [0.0],
+                "option_types": ["call"],
+            },
+        },
+    )
+
+    def _fake_get_problem_spec(pid: str):
+        requested["pid"] = pid
+        return StubSpec()
+
+    monkeypatch.setattr(cli_module, "get_problem_spec", _fake_get_problem_spec)
+    _patch_render_leaderboard_capture(monkeypatch)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(app, ["run-batch", "--manifest", str(manifest_path)])
+
+    assert result.exit_code == 0
+    assert requested["pid"] == "harmonic_oscillator"
+    call = captured["callable"]
+    assert call.keywords["problem_id"] == "harmonic_oscillator"
+
+
+def test_cli_manifest_missing_problem_id_logs_deprecation_warning(monkeypatch, tmp_path) -> None:
+    _patch_anyio_run_capture(monkeypatch, returned_rows=_ok_rows())
+
+    class StubSpec:
+        def generate_scenarios(self, grid_config, model_configs):
+            del grid_config, model_configs
+            return [
+                {
+                    "dim": 5,
+                    "volatility": 0.2,
+                    "correlation": 0.0,
+                    "option_type": "call",
+                }
+            ]
+
+    manifest_path = _write_manifest(
+        tmp_path / "manifest-no-problem.yaml",
+        {
+            "backend_url": "http://manifest-backend:9000",
+            "scenario_grid": {
+                "dimensions": [5],
+                "volatilities": [0.2],
+                "correlations": [0.0],
+                "option_types": ["call"],
+            },
+        },
+    )
+
+    monkeypatch.setattr(cli_module, "get_problem_spec", lambda _: StubSpec())
+    _patch_render_leaderboard_capture(monkeypatch)
+    monkeypatch.setattr(cli_module, "write_csv", lambda rows, output: Path(output))
+
+    result = runner.invoke(app, ["run-batch", "--manifest", str(manifest_path)])
+
+    assert result.exit_code == 0
+    assert "problem_id_not_set" in result.output
+
+
 def test_cli_manifest_preflight_fails_exits_1(monkeypatch, tmp_path) -> None:
     called = {"anyio_run": False}
 

@@ -25,6 +25,7 @@ class MockAsyncFKPinnClient:
     def __init__(self) -> None:
         self.base_url = "http://mock-backend:8000"
         self._is_closed = False
+        self.submitted_problem_ids: list[str] = []
 
     async def __aenter__(self) -> MockAsyncFKPinnClient:
         return self
@@ -42,7 +43,8 @@ class MockAsyncFKPinnClient:
         parameters: dict[str, Any],
         training_config: dict[str, Any],
     ) -> dict[str, Any]:
-        del problem_id, parameters, training_config
+        self.submitted_problem_ids.append(problem_id)
+        del parameters, training_config
         return {"id": f"sim-{uuid4()}"}
 
     async def get_simulation(self, simulation_id: str) -> dict[str, Any]:
@@ -106,6 +108,7 @@ def _setup_batch_with_statuses(
     db_path: str,
     artifacts_dir: str,
     statuses: list[str],
+    problem_id: str = "black_scholes",
 ) -> tuple[str, list[str], list[Scenario]]:
     store = MetadataStore(db_path)
     batch_run_id = str(generate_batch_run_id())
@@ -125,6 +128,7 @@ def _setup_batch_with_statuses(
         scenario_count=len(statuses),
         artifact_path=artifacts_dir,
         concurrency_limit=3,
+        problem_id=problem_id,
     )
 
     for scenario, status in zip(scenarios, statuses, strict=True):
@@ -186,6 +190,7 @@ async def test_run_batch_async_basic(tmp_path) -> None:
     assert batch_rows[0][0] == "completed"
     assert len(scenario_rows) == 3
     assert {row[0] for row in scenario_rows} == {"completed"}
+    assert client.submitted_problem_ids == ["black_scholes", "black_scholes", "black_scholes"]
 
 
 @pytest.mark.anyio
@@ -508,3 +513,59 @@ async def test_run_batch_async_pareto_rescoring(tmp_path) -> None:
     by_dim = {row["dim"]: row["score"] for row in rows}
     assert by_dim[5] < by_dim[7]
     assert by_dim[6] < by_dim[7]
+
+
+@pytest.mark.anyio
+async def test_run_batch_async_uses_provided_problem_id(tmp_path) -> None:
+    client = MockAsyncFKPinnClient()
+    artifacts_dir = tmp_path / "artifacts"
+    db_path = artifacts_dir / "experiments.db"
+
+    rows = await run_batch_async(
+        client=client,
+        scenarios=_scenarios(2),
+        batch_config=BatchConfig(),
+        problem_id="harmonic_oscillator",
+        poll_seconds=0.0,
+        max_wait_seconds=2.0,
+        artifacts_dir=artifacts_dir,
+        db_path=db_path,
+    )
+
+    assert len(rows) == 2
+    assert client.submitted_problem_ids == ["harmonic_oscillator", "harmonic_oscillator"]
+
+    store = MetadataStore(db_path)
+    try:
+        batch_problem_id = store.connection.execute(
+            "SELECT problem_id FROM batch_runs LIMIT 1"
+        ).fetchone()[0]
+    finally:
+        store.close()
+
+    assert batch_problem_id == "harmonic_oscillator"
+
+
+@pytest.mark.anyio
+async def test_resume_batch_async_uses_problem_id_from_batch_row(tmp_path) -> None:
+    artifacts_dir = tmp_path / "artifacts"
+    batch_run_id, _, _ = _setup_batch_with_statuses(
+        db_path=str(artifacts_dir / "experiments.db"),
+        artifacts_dir=str(artifacts_dir),
+        statuses=["pending"],
+        problem_id="harmonic_oscillator",
+    )
+    client = MockAsyncFKPinnClient()
+
+    rows = await resume_batch_async(
+        client=client,
+        batch_run_id=batch_run_id,
+        force=False,
+        poll_seconds=0.0,
+        max_wait_seconds=2.0,
+        artifacts_dir=artifacts_dir,
+        db_path=artifacts_dir / "experiments.db",
+    )
+
+    assert len(rows) == 1
+    assert client.submitted_problem_ids == ["harmonic_oscillator"]

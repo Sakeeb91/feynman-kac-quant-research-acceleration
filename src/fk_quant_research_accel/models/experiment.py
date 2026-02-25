@@ -71,7 +71,10 @@ class ExperimentManifest(BaseModel, frozen=True):
     manifest_version: int = 1
     name: str | None = None
     description: str | None = None
-    problem_id: str = "black_scholes"
+    problem_id: str = Field(
+        default="black_scholes",
+        description="Problem specification ID resolved via the ProblemSpec registry",
+    )
     backend_url: str
     seed: int | None = None
     scenario_grid: ScenarioGridConfig
@@ -79,6 +82,14 @@ class ExperimentManifest(BaseModel, frozen=True):
     batch_config: BatchRunConfig = Field(default_factory=BatchRunConfig)
     scoring: ScoringConfig = Field(default_factory=ScoringConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
+
+    @field_validator("problem_id")
+    @classmethod
+    def problem_id_must_not_be_blank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("problem_id must not be blank")
+        return stripped
 
 
 def load_manifest(path: str | Path) -> ExperimentManifest:

@@ -58,6 +58,18 @@ class Scenario:
             params.update(self.extra_parameters)
         return params
 
+    @classmethod
+    def from_parameters(cls, payload: dict[str, Any]) -> Scenario:
+        known = {"dim", "volatility", "correlation", "option_type", "model_config"}
+        return cls(
+            dim=int(payload.get("dim", 1)),
+            volatility=float(payload.get("volatility", 0.0)),
+            correlation=cast(float | list[list[float]], payload.get("correlation", 0.0)),
+            option_type=str(payload.get("option_type", "call")),
+            model_config=cast(dict[str, Any] | None, payload.get("model_config")),
+            extra_parameters={key: value for key, value in payload.items() if key not in known},
+        )
+
 
 @dataclass(frozen=True)
 class BatchConfig:

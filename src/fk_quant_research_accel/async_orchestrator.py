@@ -564,7 +564,7 @@ async def resume_batch_async(
         for row in scenario_rows:
             scenario_run_id = str(row["scenario_run_id"])
             scenario_payload = json.loads(str(row["scenario_json"]))
-            scenario = Scenario(**scenario_payload)
+            scenario = Scenario.from_parameters(scenario_payload)
             scenario_dir = artifact_store.get_scenario_dir(batch_run_id, scenario_run_id)
             scenario_dir.mkdir(parents=True, exist_ok=True)
             execution_items.append((scenario, scenario_run_id, scenario_dir))
