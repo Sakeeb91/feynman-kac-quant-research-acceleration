@@ -195,7 +195,23 @@ def run_batch_command(
                 )
             raise typer.Exit(code=1)
 
-        scenarios = generate_scenarios_from_manifest(experiment)
+        if "problem_id" not in experiment.model_fields_set:
+            log.warning(
+                "problem_id_not_set",
+                default="black_scholes",
+                message=(
+                    "Manifest does not specify 'problem_id'. Defaulting to 'black_scholes'. "
+                    "Please add 'problem_id: black_scholes' to your manifest."
+                ),
+            )
+
+        problem_spec = get_problem_spec(experiment.problem_id)
+        model_configs = _build_model_configs(experiment)
+        scenario_payloads = problem_spec.generate_scenarios(
+            _scenario_grid_payload(experiment),
+            model_configs,
+        )
+        scenarios = [_scenario_from_problem_payload(payload) for payload in scenario_payloads]
         log.info(
             "preflight_passed",
             scenario_count=len(scenarios),
