@@ -444,3 +444,13 @@ def test_get_problem_spec_returns_harmonic_oscillator_builtin() -> None:
 
 def test_list_problem_ids_returns_builtin_ids() -> None:
     assert list_problem_ids() == ["black_scholes", "harmonic_oscillator"]
+
+
+def test_list_problem_ids_keeps_sorted_order_with_custom_entries() -> None:
+    class _Alpha(_RegisteredSpec):
+        @property
+        def problem_id(self) -> str:
+            return "alpha"
+
+    register_problem(_Alpha())
+    assert list_problem_ids() == ["alpha", "black_scholes", "harmonic_oscillator"]
