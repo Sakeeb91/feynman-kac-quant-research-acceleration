@@ -524,3 +524,23 @@ def test_compute_comparison_excludes_non_completed_by_default(tmp_path) -> None:
     store.close()
 
     assert len(comparison["matched"]) == 1
+
+
+def test_compute_comparison_includes_all_with_flag(tmp_path) -> None:
+    store = MetadataStore(tmp_path / "experiments.db")
+    run_a = "94949494-1111-1111-1111-111111111111"
+    run_b = "95959595-2222-2222-2222-222222222222"
+    _insert_batch(store, tmp_path, batch_run_id=run_a, created_at="2025-01-01T00:00:00+00:00")
+    _insert_batch(store, tmp_path, batch_run_id=run_b, created_at="2025-01-02T00:00:00+00:00")
+
+    scenario_ok = {"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"}
+    scenario_failed = {"dim": 6, "volatility": 0.2, "correlation": 0.0, "option_type": "call"}
+    _insert_comp_scenario(store, batch_run_id=run_a, scenario_payload=scenario_ok, status="completed", score=0.2)
+    _insert_comp_scenario(store, batch_run_id=run_b, scenario_payload=scenario_ok, status="completed", score=0.3)
+    _insert_comp_scenario(store, batch_run_id=run_a, scenario_payload=scenario_failed, status="failed", score=None)
+    _insert_comp_scenario(store, batch_run_id=run_b, scenario_payload=scenario_failed, status="completed", score=0.5)
+
+    comparison = compute_comparison(store, run_a, run_b, include_all_status=True)
+    store.close()
+
+    assert len(comparison["matched"]) == 2
