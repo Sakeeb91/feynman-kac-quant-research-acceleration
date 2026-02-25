@@ -145,3 +145,23 @@ def test_list_problem_ids_sorted() -> None:
     register_problem(_Z())
     register_problem(_A())
     assert list_problem_ids() == ["a", "z"]
+
+
+def test_get_problem_spec_error_lists_valid_ids() -> None:
+    register_problem(_RegisteredSpec())
+    with pytest.raises(ValueError) as exc:
+        get_problem_spec("missing")
+    message = str(exc.value)
+    assert "registered" in message
+
+
+def test_get_problem_spec_error_suggests_nearest_match() -> None:
+    class _BlackScholesLike(_RegisteredSpec):
+        @property
+        def problem_id(self) -> str:
+            return "black_scholes"
+
+    register_problem(_BlackScholesLike())
+    with pytest.raises(ValueError) as exc:
+        get_problem_spec("black_shoals")
+    assert "Did you mean 'black_scholes'" in str(exc.value)
