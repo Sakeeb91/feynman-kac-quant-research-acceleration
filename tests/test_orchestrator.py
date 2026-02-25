@@ -33,6 +33,7 @@ class MockFKPinnClient:
         self.losses = losses or []
         self.checkpoint_mode = checkpoint_mode
         self._id_to_index: dict[str, int] = {}
+        self.submitted_problem_ids: list[str] = []
 
     def create_simulation(
         self,
@@ -40,7 +41,8 @@ class MockFKPinnClient:
         parameters: dict[str, float | int | str],
         training_config: dict[str, float | int],
     ) -> dict[str, str]:
-        _ = (problem_id, parameters, training_config)
+        _ = (parameters, training_config)
+        self.submitted_problem_ids.append(problem_id)
         index = len(self._id_to_index)
         simulation_id = f"sim-{index}-{uuid4()}"
         self._id_to_index[simulation_id] = index
