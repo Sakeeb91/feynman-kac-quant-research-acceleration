@@ -519,6 +519,7 @@ async def run_batch_async(
 async def resume_batch_async(
     client: AsyncFKPinnClient,
     batch_run_id: str,
+    problem_id: str | None = None,
     concurrency_limit: int = 20,
     max_retries: int = 3,
     poll_seconds: float = 2.0,
