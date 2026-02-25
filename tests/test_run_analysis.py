@@ -298,3 +298,75 @@ def test_align_scenarios_all_matched() -> None:
     assert len(matched) == 2
     assert only_a == []
     assert only_b == []
+
+
+def test_align_scenarios_partial_overlap() -> None:
+    scenarios_a = [
+        {"scenario_json": json.dumps({"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"})},
+        {"scenario_json": json.dumps({"dim": 10, "volatility": 0.2, "correlation": 0.0, "option_type": "call"})},
+    ]
+    scenarios_b = [
+        {"scenario_json": json.dumps({"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"})},
+        {"scenario_json": json.dumps({"dim": 20, "volatility": 0.2, "correlation": 0.0, "option_type": "call"})},
+    ]
+    matched, only_a, only_b = align_scenarios(scenarios_a, scenarios_b)
+
+    assert len(matched) == 1
+    assert len(only_a) == 1
+    assert len(only_b) == 1
+
+
+def test_align_scenarios_correlation_list_normalization() -> None:
+    corr = [[1.0, 0.5], [0.5, 1.0]]
+    scenarios_a = [
+        {"scenario_json": json.dumps({"dim": 5, "volatility": 0.2, "correlation": corr, "option_type": "call"})},
+    ]
+    scenarios_b = [
+        {"scenario_json": json.dumps({"dim": 5, "volatility": 0.2, "correlation": corr, "option_type": "call"})},
+    ]
+    matched, _, _ = align_scenarios(scenarios_a, scenarios_b)
+    assert len(matched) == 1
+
+
+def test_align_scenarios_model_config_key() -> None:
+    scenarios_a = [
+        {
+            "scenario_json": json.dumps(
+                {
+                    "dim": 5,
+                    "volatility": 0.2,
+                    "correlation": 0.0,
+                    "option_type": "call",
+                    "model_config": {"hidden_sizes": [64, 64]},
+                }
+            )
+        }
+    ]
+    scenarios_b = [
+        {
+            "scenario_json": json.dumps(
+                {
+                    "dim": 5,
+                    "volatility": 0.2,
+                    "correlation": 0.0,
+                    "option_type": "call",
+                    "model_config": {"hidden_sizes": [64, 64]},
+                }
+            )
+        },
+        {
+            "scenario_json": json.dumps(
+                {
+                    "dim": 5,
+                    "volatility": 0.2,
+                    "correlation": 0.0,
+                    "option_type": "call",
+                    "model_config": {"hidden_sizes": [128, 128]},
+                }
+            )
+        },
+    ]
+    matched, only_a, only_b = align_scenarios(scenarios_a, scenarios_b)
+    assert len(matched) == 1
+    assert len(only_a) == 0
+    assert len(only_b) == 1
