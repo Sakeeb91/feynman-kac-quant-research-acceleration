@@ -10,6 +10,8 @@ from pydantic import Field
 from fk_quant_research_accel.problems.protocol import BaseProblemSpec, ProblemParams
 from fk_quant_research_accel.problems.registry import register_problem
 
+__all__ = ["HarmonicOscillatorParams", "HarmonicOscillatorSpec"]
+
 
 class HarmonicOscillatorParams(ProblemParams):
     dim: int = Field(gt=0, le=10)
