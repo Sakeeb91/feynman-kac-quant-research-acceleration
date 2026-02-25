@@ -40,6 +40,16 @@ def _coerce_option_type(option_type: Any) -> str:
     return cast(str, getattr(option_type, "value", option_type))
 
 
+def _grid_config_for_problem(manifest: ExperimentManifest) -> dict[str, Any]:
+    grid = manifest.scenario_grid
+    return {
+        "dimensions": list(grid.dimensions),
+        "volatilities": list(grid.volatilities),
+        "correlations": grid.correlations,
+        "option_types": [_coerce_option_type(option_type) for option_type in grid.option_types],
+    }
+
+
 def validate_manifest(manifest: ExperimentManifest) -> list[PreflightError]:
     errors: list[PreflightError] = []
     try:
