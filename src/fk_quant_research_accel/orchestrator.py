@@ -180,7 +180,10 @@ def _build_failure_record(
     }
 
 
-def _resolve_scorer(problem_id: str, scoring_config: ScoringConfig) -> Any:
+def _resolve_scorer(
+    problem_id: str,
+    scoring_config: ScoringConfig,
+) -> Callable[[dict[str, Any]], float]:
     problem_spec = get_problem_spec(problem_id)
     if scoring_config.custom_scorer is not None:
         return get_scorer(scoring_config)
