@@ -274,6 +274,36 @@ def compare_db(tmp_path) -> tuple[str, str, str]:
     return str(db_path), run_a, run_b
 
 
+@pytest.fixture
+def compare_db_mixed_status(tmp_path) -> tuple[str, str, str]:
+    db_path = tmp_path / "compare-mixed.db"
+    run_a = "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    run_b = "dddddddd-dddd-dddd-dddd-dddddddddddd"
+    store = MetadataStore(db_path)
+    _insert_listing_batch(store, batch_run_id=run_a, created_at="2025-01-01T00:00:00+00:00")
+    _insert_listing_batch(store, batch_run_id=run_b, created_at="2025-01-02T00:00:00+00:00")
+
+    scenario = {"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"}
+    _insert_compare_scenario(
+        store,
+        batch_run_id=run_a,
+        scenario_run_id="ca-1",
+        scenario_payload=scenario,
+        status="failed",
+        score=None,
+    )
+    _insert_compare_scenario(
+        store,
+        batch_run_id=run_b,
+        scenario_run_id="db-1",
+        scenario_payload=scenario,
+        status="completed",
+        score=0.2,
+    )
+    store.close()
+    return str(db_path), run_a, run_b
+
+
 def test_help_includes_program_name_and_log_level() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
@@ -973,3 +1003,33 @@ def test_compare_runs_resolves_latest(compare_db: tuple[str, str, str]) -> None:
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
     assert "matched" in payload
+
+
+def test_compare_runs_invalid_run_id(compare_db: tuple[str, str, str]) -> None:
+    db_path, _, run_b = compare_db
+    result = runner.invoke(
+        app,
+        ["compare-runs", "missing-run", run_b, "--db-path", db_path, "--format", "json"],
+    )
+    assert result.exit_code == 1
+
+
+def test_compare_runs_all_status_flag(compare_db_mixed_status: tuple[str, str, str]) -> None:
+    db_path, run_a, run_b = compare_db_mixed_status
+    result = runner.invoke(
+        app,
+        [
+            "compare-runs",
+            run_a,
+            run_b,
+            "--db-path",
+            db_path,
+            "--all-status",
+            "--format",
+            "json",
+        ],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert len(payload["matched"]) == 1
+    assert payload["matched"][0]["run_a_status"] == "failed"
