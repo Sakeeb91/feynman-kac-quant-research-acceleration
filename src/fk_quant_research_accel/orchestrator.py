@@ -306,9 +306,10 @@ def run_batch(
             scenario_map.append((scenario, scenario_run_id, scenario_dir))
 
         submitted: list[tuple[Scenario, str, str, Path]] = []
+        problem_spec = get_problem_spec(problem_id)
         for scenario, scenario_run_id, scenario_dir in scenario_map:
             simulation = client.create_simulation(
-                problem_id="black_scholes",
+                problem_id=problem_spec.problem_id,
                 parameters=scenario.as_parameters(),
                 training_config=batch_config.to_payload(),
             )
