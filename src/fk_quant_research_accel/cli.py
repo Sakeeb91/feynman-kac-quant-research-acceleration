@@ -5,7 +5,7 @@ from __future__ import annotations
 import anyio
 from functools import partial
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import structlog
 import typer
@@ -14,9 +14,12 @@ from .async_client import AsyncFKPinnClient
 from .logging import configure_logging
 from .leaderboard import render_leaderboard
 from .models import ExperimentManifest, LogLevel, ScoringConfig, content_hash, load_manifest
+from .problems import get_problem_spec
 from .async_orchestrator import resume_batch_async, run_batch_async
 from .orchestrator import (
     BatchConfig,
+    Scenario,
+    _build_model_configs,
     generate_black_scholes_scenarios,
     generate_scenarios_from_manifest,
 )
