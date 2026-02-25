@@ -16,6 +16,7 @@ from fk_quant_research_accel.problems import (
     ProblemSpec as ExportedProblemSpec,
 )
 from fk_quant_research_accel.models.experiment import ExperimentManifest
+from fk_quant_research_accel.models.enums import ScoringStrategy
 from fk_quant_research_accel.orchestrator import generate_scenarios_from_manifest
 from fk_quant_research_accel.problems.protocol import BaseProblemSpec, ProblemParams, ProblemSpec
 from fk_quant_research_accel.problems.registry import (
@@ -113,7 +114,8 @@ def test_base_problem_spec_default_pareto_objectives() -> None:
 
 def test_base_problem_spec_supports_scoring_strategy() -> None:
     spec = _BaseSpec()
-    assert spec.supports_scoring_strategy("loss_based") is True
+    for strategy in ScoringStrategy:
+        assert spec.supports_scoring_strategy(strategy.value) is True
 
 
 def test_base_problem_spec_validate_uses_param_schema() -> None:
