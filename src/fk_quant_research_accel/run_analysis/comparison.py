@@ -71,7 +71,7 @@ def align_scenarios(
     return matched, only_a, only_b
 
 
-def _extract_metrics(result_json_str: str | None) -> dict[str, Any]:
+def _extract_metrics(result_json_str: str | None, *, fallback_status: str | None = None) -> dict[str, Any]:
     if not result_json_str:
         return {
             "score": None,
@@ -79,7 +79,7 @@ def _extract_metrics(result_json_str: str | None) -> dict[str, Any]:
             "grad_norm": None,
             "progress": None,
             "convergence_health": None,
-            "status": None,
+            "status": fallback_status,
         }
     try:
         payload = json.loads(result_json_str)
@@ -90,7 +90,7 @@ def _extract_metrics(result_json_str: str | None) -> dict[str, Any]:
             "grad_norm": None,
             "progress": None,
             "convergence_health": None,
-            "status": None,
+            "status": fallback_status,
         }
     return {
         "score": payload.get("score"),
@@ -98,7 +98,7 @@ def _extract_metrics(result_json_str: str | None) -> dict[str, Any]:
         "grad_norm": payload.get("grad_norm"),
         "progress": payload.get("progress"),
         "convergence_health": payload.get("convergence_health"),
-        "status": payload.get("status"),
+        "status": payload.get("status", fallback_status),
     }
 
 
@@ -119,8 +119,8 @@ def compute_comparison(
     a_wins = 0
     b_wins = 0
     for row_a, row_b in matched_pairs:
-        metrics_a = _extract_metrics(row_a.get("result_json"))
-        metrics_b = _extract_metrics(row_b.get("result_json"))
+        metrics_a = _extract_metrics(row_a.get("result_json"), fallback_status=row_a.get("status"))
+        metrics_b = _extract_metrics(row_b.get("result_json"), fallback_status=row_b.get("status"))
         score_delta = delta_abs(metrics_a["score"], metrics_b["score"])
         if score_delta is not None:
             if score_delta < 0:
