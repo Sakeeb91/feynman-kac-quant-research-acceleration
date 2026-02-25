@@ -10,10 +10,13 @@ _PROBLEM_REGISTRY: dict[str, ProblemSpec] = {}
 
 
 def _ensure_builtin_registration() -> None:
-    import fk_quant_research_accel.problems.black_scholes as _black_scholes
-    import fk_quant_research_accel.problems.harmonic_oscillator as _harmonic_oscillator
+    from fk_quant_research_accel.problems.black_scholes import BlackScholesSpec
+    from fk_quant_research_accel.problems.harmonic_oscillator import HarmonicOscillatorSpec
 
-    _ = (_black_scholes, _harmonic_oscillator)
+    if "black_scholes" not in _PROBLEM_REGISTRY:
+        register_problem(BlackScholesSpec())
+    if "harmonic_oscillator" not in _PROBLEM_REGISTRY:
+        register_problem(HarmonicOscillatorSpec())
 
 
 def register_problem(spec: ProblemSpec) -> ProblemSpec:
