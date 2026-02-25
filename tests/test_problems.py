@@ -2,9 +2,16 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
 from pydantic import BaseModel, Field
 
 from fk_quant_research_accel.problems.protocol import BaseProblemSpec, ProblemParams, ProblemSpec
+from fk_quant_research_accel.problems.registry import (
+    _PROBLEM_REGISTRY,
+    get_problem_spec,
+    list_problem_ids,
+    register_problem,
+)
 
 
 def test_problem_params_is_pydantic_model() -> None:
@@ -97,3 +104,44 @@ def test_base_problem_spec_validate_uses_param_schema() -> None:
     errors = spec.validate({"dim": 0})
     assert errors
     assert "greater than 0" in errors[0]
+
+
+@pytest.fixture(autouse=True)
+def _clear_problem_registry() -> None:
+    _PROBLEM_REGISTRY.clear()
+
+
+class _RegisteredSpec(_BaseSpec):
+    @property
+    def problem_id(self) -> str:
+        return "registered"
+
+
+def test_register_problem_and_get_problem_spec() -> None:
+    spec = _RegisteredSpec()
+    register_problem(spec)
+    assert get_problem_spec("registered") is spec
+
+
+def test_register_problem_rejects_duplicates() -> None:
+    first = _RegisteredSpec()
+    second = _RegisteredSpec()
+    register_problem(first)
+    with pytest.raises(ValueError):
+        register_problem(second)
+
+
+def test_list_problem_ids_sorted() -> None:
+    class _A(_RegisteredSpec):
+        @property
+        def problem_id(self) -> str:
+            return "a"
+
+    class _Z(_RegisteredSpec):
+        @property
+        def problem_id(self) -> str:
+            return "z"
+
+    register_problem(_Z())
+    register_problem(_A())
+    assert list_problem_ids() == ["a", "z"]
