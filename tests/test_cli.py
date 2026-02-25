@@ -937,3 +937,39 @@ def test_list_runs_csv_format(populated_db: str) -> None:
 
     assert result.exit_code == 0
     assert "batch_run_id" in result.stdout
+
+
+def test_compare_runs_json_output(compare_db: tuple[str, str, str]) -> None:
+    db_path, run_a, run_b = compare_db
+    result = runner.invoke(
+        app,
+        ["compare-runs", run_a, run_b, "--db-path", db_path, "--format", "json"],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert len(payload["matched"]) == 2
+    assert payload["summary"]["matched_count"] == 2
+    assert payload["summary"]["only_a_count"] == 1
+    assert payload["summary"]["only_b_count"] == 1
+
+
+def test_compare_runs_table_output(compare_db: tuple[str, str, str]) -> None:
+    db_path, run_a, run_b = compare_db
+    result = runner.invoke(
+        app,
+        ["compare-runs", run_a, run_b, "--db-path", db_path, "--format", "table"],
+    )
+    assert result.exit_code == 0
+
+
+def test_compare_runs_resolves_latest(compare_db: tuple[str, str, str]) -> None:
+    db_path, _, _ = compare_db
+    result = runner.invoke(
+        app,
+        ["compare-runs", "latest", "latest~1", "--db-path", db_path, "--format", "json"],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert "matched" in payload
