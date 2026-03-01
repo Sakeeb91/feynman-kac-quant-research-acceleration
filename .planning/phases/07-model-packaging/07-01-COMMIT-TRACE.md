@@ -12,3 +12,4 @@ This file documents additional atomic commit checkpoints requested for Phase 07-
 - commit 09: checkpoint recorded
 - commit 10: checkpoint recorded
 - commit 11: checkpoint recorded
+- commit 12: checkpoint recorded
