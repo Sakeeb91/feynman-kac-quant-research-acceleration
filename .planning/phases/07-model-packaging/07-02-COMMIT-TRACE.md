@@ -5,3 +5,4 @@ This file records additional atomic commit checkpoints requested for Phase 07-02
 - commit 02: checkpoint recorded
 - commit 03: checkpoint recorded
 - commit 04: checkpoint recorded
+- commit 05: checkpoint recorded
