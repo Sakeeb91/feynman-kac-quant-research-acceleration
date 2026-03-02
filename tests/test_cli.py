@@ -154,6 +154,174 @@ def _insert_compare_scenario(
     )
 
 
+def _setup_export_model_case(tmp_path: Path) -> dict[str, str]:
+    db_path = tmp_path / "export-model.db"
+    artifacts_dir = tmp_path / "artifacts"
+    output_dir = tmp_path / "packages"
+    batch_run_id = "eeeeeeee-1111-1111-1111-111111111111"
+    winner_scenario_id = "f1111111-1111-1111-1111-111111111111"
+    other_scenario_id = "f2222222-2222-2222-2222-222222222222"
+
+    store = MetadataStore(db_path)
+    store.create_batch_run(
+        batch_run_id=batch_run_id,
+        created_at="2025-01-05T00:00:00+00:00",
+        config_json=json.dumps(
+            {
+                "n_steps": 40,
+                "batch_size": 64,
+                "n_mc_paths": 256,
+                "learning_rate": 1e-3,
+            },
+            sort_keys=True,
+        ),
+        manifest_schema_version=1,
+        git_sha="abc123",
+        git_dirty=False,
+        python_version="3.12.0",
+        os_info="test-os",
+        seed=7,
+        scenario_count=2,
+        artifact_path=str(artifacts_dir / batch_run_id),
+        problem_id="black_scholes",
+    )
+
+    batch_artifact_dir = artifacts_dir / batch_run_id
+    batch_artifact_dir.mkdir(parents=True, exist_ok=True)
+    (batch_artifact_dir / "manifest.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "batch_run_id": batch_run_id,
+                "created_at": "2025-01-05T00:00:00+00:00",
+                "reproducibility": {
+                    "git_sha": "abc123",
+                    "git_dirty": False,
+                    "python_version": "3.12.0",
+                    "os_info": "test-os",
+                    "seed": 7,
+                    "packages": {"pydantic": "2.12.5"},
+                },
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    winner_scenario_dir = batch_artifact_dir / winner_scenario_id
+    winner_scenario_dir.mkdir(parents=True, exist_ok=True)
+    winner_checkpoint_path = winner_scenario_dir / "checkpoint" / "model_checkpoint.pt"
+    winner_checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    winner_checkpoint_path.write_bytes(b"winner-checkpoint")
+    (winner_scenario_dir / "result.json").write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "score": 0.05,
+                "train_loss": 0.1,
+                "val_loss": 0.2,
+                "grad_norm": 0.3,
+                "progress": 1.0,
+                "convergence_health": "healthy",
+                "checkpoint_path": str(winner_checkpoint_path),
+            },
+            sort_keys=True,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    other_scenario_dir = batch_artifact_dir / other_scenario_id
+    other_scenario_dir.mkdir(parents=True, exist_ok=True)
+    other_checkpoint_path = other_scenario_dir / "checkpoint" / "model_checkpoint.pt"
+    other_checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    other_checkpoint_path.write_bytes(b"other-checkpoint")
+    (other_scenario_dir / "result.json").write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "score": 0.10,
+                "train_loss": 0.2,
+                "val_loss": 0.3,
+                "grad_norm": 0.4,
+                "progress": 1.0,
+                "convergence_health": "healthy",
+                "checkpoint_path": str(other_checkpoint_path),
+            },
+            sort_keys=True,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    store.create_scenario_run(
+        scenario_run_id=winner_scenario_id,
+        batch_run_id=batch_run_id,
+        scenario_json=json.dumps(
+            {"dim": 5, "volatility": 0.2, "correlation": 0.0, "option_type": "call"},
+            sort_keys=True,
+        ),
+        created_at="2025-01-05T00:00:00+00:00",
+    )
+    store.persist_scenario_result(
+        scenario_run_id=winner_scenario_id,
+        status="completed",
+        result_json=json.dumps(
+            {
+                "status": "completed",
+                "score": 0.05,
+                "train_loss": 0.1,
+                "val_loss": 0.2,
+                "grad_norm": 0.3,
+                "progress": 1.0,
+                "convergence_health": "healthy",
+            },
+            sort_keys=True,
+        ),
+        score=0.05,
+        checkpoint_path=str(winner_checkpoint_path),
+        completed_at="2025-01-05T00:01:00+00:00",
+    )
+
+    store.create_scenario_run(
+        scenario_run_id=other_scenario_id,
+        batch_run_id=batch_run_id,
+        scenario_json=json.dumps(
+            {"dim": 10, "volatility": 0.3, "correlation": 0.1, "option_type": "put"},
+            sort_keys=True,
+        ),
+        created_at="2025-01-05T00:00:00+00:00",
+    )
+    store.persist_scenario_result(
+        scenario_run_id=other_scenario_id,
+        status="completed",
+        result_json=json.dumps(
+            {
+                "status": "completed",
+                "score": 0.10,
+                "train_loss": 0.2,
+                "val_loss": 0.3,
+                "grad_norm": 0.4,
+                "progress": 1.0,
+                "convergence_health": "healthy",
+            },
+            sort_keys=True,
+        ),
+        score=0.10,
+        checkpoint_path=str(other_checkpoint_path),
+        completed_at="2025-01-05T00:01:00+00:00",
+    )
+    store.close()
+
+    return {
+        "db_path": str(db_path),
+        "artifacts_dir": str(artifacts_dir),
+        "output_dir": str(output_dir),
+        "batch_run_id": batch_run_id,
+        "winner_scenario_id": winner_scenario_id,
+        "other_scenario_id": other_scenario_id,
+    }
+
+
 @pytest.fixture
 def populated_db(tmp_path) -> str:
     db_path = tmp_path / "experiments.db"
@@ -375,6 +543,20 @@ def test_show_run_help() -> None:
     result = runner.invoke(app, ["show-run", "--help"])
     assert result.exit_code == 0
     for token in ["--db-path", "--format", "--verbose"]:
+        assert token in result.stdout
+
+
+def test_export_model_help() -> None:
+    result = runner.invoke(app, ["export-model", "--help"])
+    assert result.exit_code == 0
+    for token in [
+        "--output-dir",
+        "--scenario-id",
+        "--db-path",
+        "--artifacts-dir",
+        "--force",
+        "--zip",
+    ]:
         assert token in result.stdout
 
 
@@ -1198,3 +1380,123 @@ def test_show_run_not_found(compare_db: tuple[str, str, str]) -> None:
         ["show-run", "missing-run", "--db-path", db_path, "--format", "json"],
     )
     assert result.exit_code == 1
+
+
+def test_export_model_success(tmp_path) -> None:
+    context = _setup_export_model_case(tmp_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "export-model",
+            context["batch_run_id"],
+            "--db-path",
+            context["db_path"],
+            "--artifacts-dir",
+            context["artifacts_dir"],
+            "--output-dir",
+            context["output_dir"],
+        ],
+    )
+
+    assert result.exit_code == 0
+    package_dir = (
+        Path(context["output_dir"])
+        / f"model_pkg_{context['batch_run_id'][:8]}_{context['winner_scenario_id'][:8]}"
+    )
+    assert package_dir.exists()
+    assert (package_dir / "MANIFEST.yaml").exists()
+
+
+def test_export_model_with_zip(tmp_path) -> None:
+    context = _setup_export_model_case(tmp_path)
+    package_base = (
+        Path(context["output_dir"])
+        / f"model_pkg_{context['batch_run_id'][:8]}_{context['winner_scenario_id'][:8]}"
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "export-model",
+            context["batch_run_id"],
+            "--db-path",
+            context["db_path"],
+            "--artifacts-dir",
+            context["artifacts_dir"],
+            "--output-dir",
+            context["output_dir"],
+            "--zip",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert Path(f"{package_base}.zip").exists()
+
+
+def test_export_model_no_run(tmp_path) -> None:
+    db_path = tmp_path / "experiments.db"
+    MetadataStore(db_path).close()
+
+    result = runner.invoke(
+        app,
+        [
+            "export-model",
+            "missing-run",
+            "--db-path",
+            str(db_path),
+            "--artifacts-dir",
+            str(tmp_path / "artifacts"),
+            "--output-dir",
+            str(tmp_path / "packages"),
+        ],
+    )
+    assert result.exit_code == 1
+
+
+def test_export_model_force_overwrite(tmp_path) -> None:
+    context = _setup_export_model_case(tmp_path)
+    args = [
+        "export-model",
+        context["batch_run_id"],
+        "--db-path",
+        context["db_path"],
+        "--artifacts-dir",
+        context["artifacts_dir"],
+        "--output-dir",
+        context["output_dir"],
+    ]
+
+    first = runner.invoke(app, args)
+    second = runner.invoke(app, args + ["--force"])
+
+    assert first.exit_code == 0
+    assert second.exit_code == 0
+
+
+def test_export_model_scenario_id(tmp_path) -> None:
+    context = _setup_export_model_case(tmp_path)
+    package_dir = (
+        Path(context["output_dir"])
+        / f"model_pkg_{context['batch_run_id'][:8]}_{context['other_scenario_id'][:8]}"
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "export-model",
+            context["batch_run_id"],
+            "--db-path",
+            context["db_path"],
+            "--artifacts-dir",
+            context["artifacts_dir"],
+            "--output-dir",
+            context["output_dir"],
+            "--scenario-id",
+            context["other_scenario_id"],
+        ],
+    )
+
+    assert result.exit_code == 0
+    manifest = yaml.safe_load((package_dir / "MANIFEST.yaml").read_text(encoding="utf-8"))
+    assert manifest["scenario_run_id"] == context["other_scenario_id"]
