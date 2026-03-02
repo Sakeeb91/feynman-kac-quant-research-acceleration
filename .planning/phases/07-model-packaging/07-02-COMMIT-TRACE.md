@@ -24,3 +24,4 @@ This file records additional atomic commit checkpoints requested for Phase 07-02
 - commit 21: checkpoint recorded
 - commit 22: checkpoint recorded
 - commit 23: checkpoint recorded
+- commit 24: checkpoint recorded
