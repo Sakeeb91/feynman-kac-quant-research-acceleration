@@ -5,15 +5,20 @@ from __future__ import annotations
 import anyio
 from functools import partial
 from pathlib import Path
+import shutil
 from typing import Any, cast
 
+from rich.console import Console
+from rich.table import Table
 import structlog
 import typer
+import yaml
 
 from .async_client import AsyncFKPinnClient
 from .logging import configure_logging
 from .leaderboard import render_leaderboard
 from .models import ExperimentManifest, LogLevel, ScoringConfig, content_hash, load_manifest
+from .packaging import ModelPackager
 from .problems import get_problem_spec
 from .async_orchestrator import resume_batch_async, run_batch_async
 from .orchestrator import (
@@ -21,7 +26,6 @@ from .orchestrator import (
     Scenario,
     _build_model_configs,
     generate_black_scholes_scenarios,
-    generate_scenarios_from_manifest,
 )
 from .run_analysis.comparison import compute_comparison
 from .run_analysis.formatters import (
@@ -436,6 +440,100 @@ def show_run_command(
             emit_show_run_csv(scenarios)
     except ValueError as exc:
         log.error("show_run_failed", run_id=run_id, error=str(exc))
+        raise typer.Exit(code=1) from exc
+    finally:
+        store.close()
+
+
+@app.command("export-model")
+def export_model_command(
+    run_id: str = typer.Argument(
+        ...,
+        help="Batch run to export (UUID, prefix, latest, latest~N)",
+    ),
+    output_dir: str = typer.Option(
+        "model_packages",
+        "--output-dir",
+        help="Directory to create the package in",
+    ),
+    scenario_id: str | None = typer.Option(
+        None,
+        "--scenario-id",
+        help="Export a specific scenario (default: best-scoring)",
+    ),
+    db_path: str = typer.Option("artifacts/experiments.db", "--db-path"),
+    artifacts_dir: str = typer.Option("artifacts", "--artifacts-dir"),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Overwrite existing package directory",
+    ),
+    zip_package: bool = typer.Option(
+        False,
+        "--zip",
+        help="Compress package into a .zip archive",
+    ),
+) -> None:
+    log = structlog.get_logger()
+    store = MetadataStore(db_path)
+    try:
+        resolved = resolve_run_id(run_id, store)
+        packager = ModelPackager(store=store, artifacts_dir=artifacts_dir)
+        package_path = packager.export_package(
+            resolved,
+            output_dir,
+            scenario_run_id=scenario_id,
+            force=force,
+        )
+
+        zip_path: str | None = None
+        if zip_package:
+            zip_path = shutil.make_archive(
+                str(package_path),
+                "zip",
+                root_dir=str(package_path.parent),
+                base_dir=package_path.name,
+            )
+            log.info("package_zipped", package_path=str(package_path), zip_path=zip_path)
+
+        manifest_path = package_path / "MANIFEST.yaml"
+        manifest_payload = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(manifest_payload, dict):
+            raise ValueError(f"Invalid package manifest at {manifest_path}")
+
+        metrics = manifest_payload.get("metrics")
+        metrics_payload = metrics if isinstance(metrics, dict) else {}
+        acceptance = manifest_payload.get("acceptance")
+        acceptance_payload = acceptance if isinstance(acceptance, dict) else {}
+        acceptance_passed = bool(acceptance_payload.get("passed"))
+
+        table = Table(title="Model Package Export")
+        table.add_column("Field", style="cyan")
+        table.add_column("Value", overflow="fold")
+        table.add_row("Package path", str(package_path))
+        if zip_path is not None:
+            table.add_row("Zip path", zip_path)
+        table.add_row("Batch run ID", str(manifest_payload.get("batch_run_id", "--")))
+        table.add_row("Scenario run ID", str(manifest_payload.get("scenario_run_id", "--")))
+        table.add_row("Problem ID", str(manifest_payload.get("problem_id", "--")))
+
+        score = metrics_payload.get("score")
+        table.add_row("Score", "--" if score is None else str(score))
+        table.add_row("Convergence health", str(metrics_payload.get("convergence_health", "--")))
+        table.add_row(
+            "Acceptance",
+            "[green]PASSED[/green]" if acceptance_passed else "[red]FAILED[/red]",
+        )
+
+        Console(stderr=True).print(table)
+    except (ValueError, FileExistsError, FileNotFoundError) as exc:
+        log.error(
+            "export_model_failed",
+            run_id=run_id,
+            db_path=db_path,
+            artifacts_dir=artifacts_dir,
+            error=str(exc),
+        )
         raise typer.Exit(code=1) from exc
     finally:
         store.close()
