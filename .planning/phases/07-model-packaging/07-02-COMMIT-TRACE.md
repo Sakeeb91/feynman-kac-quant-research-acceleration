@@ -36,3 +36,4 @@ This file records additional atomic commit checkpoints requested for Phase 07-02
 - commit 33: checkpoint recorded
 - commit 34: checkpoint recorded
 - commit 35: checkpoint recorded
+- commit 36: checkpoint recorded
